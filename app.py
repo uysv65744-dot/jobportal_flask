@@ -16,7 +16,7 @@ app.config['MAX_CONTENT_LENGTH'] = config.MAX_VIDEO_SIZE + config.MAX_CV_SIZE
 os.makedirs(app.config['CV_FOLDER'], exist_ok=True)
 os.makedirs(app.config['VIDEO_FOLDER'], exist_ok=True)
 
-# قاعدة بيانات SQLite صغيرة
+# قاعدة البيانات
 def get_db_connection():
     conn = sqlite3.connect(config.DATABASE)
     conn.row_factory = sqlite3.Row
@@ -49,6 +49,7 @@ def init_db():
 init_db()
 
 
+# السماح بالامتدادات
 def allowed_file(filename, allowed_exts):
     if '.' not in filename:
         return False
@@ -56,6 +57,9 @@ def allowed_file(filename, allowed_exts):
     return ext in allowed_exts
 
 
+# ==============================
+# 🏠 الصفحة الرئيسية
+# ==============================
 @app.route('/')
 def index():
     conn = get_db_connection()
@@ -64,6 +68,9 @@ def index():
     return render_template('index.html', jobs=jobs)
 
 
+# ==============================
+# 📜 واجهة API لعرض الوظائف
+# ==============================
 @app.route('/api/jobs/', methods=['GET'])
 def api_jobs():
     conn = get_db_connection()
@@ -73,6 +80,9 @@ def api_jobs():
     return jsonify(jobs)
 
 
+# ==============================
+# 📤 رفع متكامل عبر الموقع
+# ==============================
 @app.route('/api/upload', methods=['POST'])
 def api_upload():
     full_name = request.form.get('full_name')
@@ -127,6 +137,65 @@ def api_upload():
     return jsonify({'message': 'تم رفع الطلب بنجاح ✅', 'cv': cv_path, 'video': video_path}), 201
 
 
+# ==============================
+# 📥 رفع السيرة الذاتية من تطبيق Android مباشرة
+# ==============================
+@app.route('/upload_cv', methods=['POST'])
+def upload_cv():
+    file = request.files.get('file')
+    if not file:
+        return jsonify({'error': 'لم يتم استقبال أي ملف'}), 400
+
+    filename = secure_filename(file.filename)
+    if not allowed_file(filename, config.ALLOWED_CV):
+        return jsonify({'error': 'نوع السيرة الذاتية غير مدعوم'}), 400
+
+    file.seek(0, os.SEEK_END)
+    if file.tell() > config.MAX_CV_SIZE:
+        return jsonify({'error': 'حجم الملف كبير (5MB كحد أقصى)'}), 400
+    file.seek(0)
+
+    save_name = f"cv_{int(__import__('time').time())}_{filename}"
+    save_path = os.path.join(app.config['CV_FOLDER'], save_name)
+    file.save(save_path)
+
+    return jsonify({
+        'message': 'تم رفع السيرة الذاتية بنجاح ✅',
+        'path': f"/uploads/cvs/{save_name}"
+    }), 200
+
+
+# ==============================
+# 🎥 رفع الفيديو من تطبيق Android مباشرة
+# ==============================
+@app.route('/upload_video', methods=['POST'])
+def upload_video():
+    file = request.files.get('file')
+    if not file:
+        return jsonify({'error': 'لم يتم استقبال أي ملف'}), 400
+
+    filename = secure_filename(file.filename)
+    if not allowed_file(filename, config.ALLOWED_VIDEO):
+        return jsonify({'error': 'نوع الفيديو غير مدعوم'}), 400
+
+    file.seek(0, os.SEEK_END)
+    if file.tell() > config.MAX_VIDEO_SIZE:
+        return jsonify({'error': 'حجم الفيديو كبير (60MB كحد أقصى)'}), 400
+    file.seek(0)
+
+    save_name = f"video_{int(__import__('time').time())}_{filename}"
+    save_path = os.path.join(app.config['VIDEO_FOLDER'], save_name)
+    file.save(save_path)
+
+    return jsonify({
+        'message': 'تم رفع الفيديو بنجاح 🎥',
+        'path': f"/uploads/videos/{save_name}"
+    }), 200
+
+
+# ==============================
+# 🗂️ تحميل الملفات مباشرة
+# ==============================
 @app.route('/uploads/cvs/<path:filename>')
 def uploaded_cv(filename):
     return send_from_directory(app.config['CV_FOLDER'], filename)
@@ -137,6 +206,9 @@ def uploaded_video(filename):
     return send_from_directory(app.config['VIDEO_FOLDER'], filename)
 
 
+# ==============================
+# ➕ إضافة وظيفة جديدة
+# ==============================
 @app.route('/add_job', methods=['POST'])
 def add_job():
     title = request.form.get('title')
@@ -154,5 +226,8 @@ def add_job():
     return redirect(url_for('index'))
 
 
+# ==============================
+# 🚀 تشغيل السيرفر
+# ==============================
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
