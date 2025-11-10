@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ar">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>بوابتي للتوظيف</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 بوابتي للتوظيف</h1>
+
+    <section class="jobs">
+      <h2>الوظائف المتاحة</h2>
+      {% if jobs %}
+        <ul>
+          {% for job in jobs %}
+            <li>
+              <h3>{{ job.title }}</h3>
+              <p><strong>الشركة:</strong> {{ job.company }}</p>
+              <p><strong>الموقع:</strong> {{ job.location }}</p>
+              <p>{{ job.description }}</p>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>لا توجد وظائف حالياً.</p>
+      {% endif %}
+    </section>
+
+    <section class="apply">
+      <h2>قدّم الآن</h2>
+      <form action="/api/upload" method="post" enctype="multipart/form-data">
+        <input type="text" name="full_name" placeholder="الاسم الكامل" required><br>
+        <input type="email" name="email" placeholder="البريد الإلكتروني" required><br>
+        <input type="text" name="phone" placeholder="رقم الهاتف (اختياري)"><br>
+        <select name="job_id">
+          <option value="">عام</option>
+          {% for job in jobs %}
+            <option value="{{ job.id }}">{{ job.title }}</option>
+          {% endfor %}
+        </select><br>
+        <label>السيرة الذاتية</label><br>
+        <input type="file" name="cv" accept=".pdf,.doc,.docx"><br>
+        <label>الفيديو التعريفي</label><br>
+        <input type="file" name="intro_video" accept="video/*"><br>
+        <button type="submit">إرسال الطلب</button>
+      </form>
+    </section>
+
+    <section class="admin-add">
+      <h3>إضافة وظيفة (تجريبية)</h3>
+      <form action="/add_job" method="post">
+        <input type="text" name="title" placeholder="عنوان الوظيفة"><br>
+        <input type="text" name="company" placeholder="اسم الشركة"><br>
+        <input type="text" name="location" placeholder="الموقع"><br>
+        <textarea name="description" placeholder="وصف الوظيفة"></textarea><br>
+        <button type="submit">أضف الوظيفة</button>
+      </form>
+    </section>
+  </div>
+</body>
+</html>
