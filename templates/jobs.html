@@ -55,6 +55,14 @@
             font-weight: 600;
         }
         
+        .btn-success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+        }
+        
         .filter-card {
             background: white;
             border-radius: 15px;
@@ -76,6 +84,55 @@
             padding: 20px;
             box-shadow: 0 3px 10px rgba(0,0,0,0.1);
             margin-bottom: 30px;
+        }
+        
+        .quick-apply-btn {
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .quick-apply-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .quick-apply-btn:hover::before {
+            left: 100%;
+        }
+        
+        .quick-apply-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .mobile-feature-badge {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        /* تنسيقات خاصة عندما يكون المستخدم داخل التطبيق */
+        body.from-app .quick-apply-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+        
+        body.from-app .app-only-feature {
+            display: block !important;
+        }
+        
+        .app-only-feature {
+            display: none;
         }
     </style>
 </head>
@@ -150,6 +207,29 @@
                             <i class="fas fa-redo me-2"></i>إعادة تعيين
                         </a>
                     </form>
+                    
+                    <!-- قسم التقديم السريع -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="fw-bold text-success mb-2">
+                            <i class="fas fa-mobile-alt me-2"></i>التقديم السريع
+                        </h6>
+                        <p class="small text-muted mb-0">
+                            استخدم تطبيق الجوال لتقديم سريع مع إمكانية رفع السيرة الذاتية وتسجيلات الفيديو
+                        </p>
+                    </div>
+
+                    <!-- ميزات التطبيق فقط -->
+                    <div class="app-only-feature mt-3 p-3 bg-success text-white rounded">
+                        <h6 class="fw-bold mb-2">
+                            <i class="fas fa-star me-2"></i>ميزات التطبيق الحصري
+                        </h6>
+                        <ul class="small mb-0 ps-3">
+                            <li>رفع السيرة الذاتية بسهولة</li>
+                            <li>تسجيل فيديو تعريف</li>
+                            <li>حفظ البيانات تلقائياً</li>
+                            <li>التقديم السريع المباشر</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 
@@ -201,6 +281,11 @@
                                             {% if job.category %}
                                             <span class="badge bg-info">{{ job.category }}</span>
                                             {% endif %}
+                                            
+                                            <!-- شارة التقديم السريع -->
+                                            <span class="mobile-feature-badge">
+                                                <i class="fas fa-mobile-alt me-1"></i>تقديم سريع
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -226,13 +311,34 @@
                                 </div>
                             </div>
                             
+                            <!-- أزرار الإجراءات - محدثة مع زر التقديم السريع -->
                             <div class="col-md-4 text-md-end text-start mt-3 mt-md-0">
                                 <a href="/job/{{ job.id }}" class="btn btn-primary w-100 mb-2">
                                     <i class="fas fa-eye me-2"></i>عرض التفاصيل
                                 </a>
-                                <a href="/apply/{{ job.id }}" class="btn btn-outline-primary w-100">
-                                    <i class="fas fa-paper-plane me-2"></i>تقدم الآن
+                                <a href="/apply/{{ job.id }}" class="btn btn-outline-primary w-100 mb-2">
+                                    <i class="fas fa-paper-plane me-2"></i>تقديم عادي
                                 </a>
+                                <!-- زر التقديم السريع الجديد -->
+                                <a href="/mobile/apply/app?job_id={{ job.id }}&job_title={{ job.title|urlencode }}&company_name={{ job.company_name|urlencode }}&location={{ job.location|urlencode }}&job_type={{ job.job_type|urlencode }}" 
+                                   class="btn btn-success w-100 quick-apply-btn" 
+                                   data-job-id="{{ job.id }}"
+                                   data-job-title="{{ job.title }}"
+                                   data-company="{{ job.company_name }}"
+                                   data-location="{{ job.location }}"
+                                   data-job-type="{{ job.job_type }}">
+                                    <i class="fas fa-mobile-alt me-2"></i>📱 تقديم سريع
+                                </a>
+
+                                <!-- زر خاص بالتطبيق فقط -->
+                                <button class="btn btn-warning w-100 mt-2 app-only-feature app-quick-apply-btn"
+                                        data-job-id="{{ job.id }}"
+                                        data-job-title="{{ job.title }}"
+                                        data-company="{{ job.company_name }}"
+                                        data-location="{{ job.location }}"
+                                        data-job-type="{{ job.job_type }}">
+                                    <i class="fas fa-bolt me-2"></i>⚡ تقديم فوري
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -260,5 +366,127 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- سكريبت لتحسين تجربة التقديم السريع -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // التحقق إذا كان المستخدم داخل التطبيق
+            const isInApp = window.android || /MyJobPortalApp/i.test(navigator.userAgent);
+            
+            if (isInApp) {
+                // إضافة فئة خاصة للتطبيق
+                document.body.classList.add('from-app');
+                
+                // تحديث جميع روابط التقديم السريع
+                const quickApplyLinks = document.querySelectorAll('.quick-apply-btn');
+                quickApplyLinks.forEach(link => {
+                    // تغيير الرابط لصفحة التطبيق المخصصة
+                    const jobId = link.getAttribute('data-job-id');
+                    const jobTitle = link.getAttribute('data-job-title');
+                    const company = link.getAttribute('data-company');
+                    const location = link.getAttribute('data-location');
+                    const jobType = link.getAttribute('data-job-type');
+                    
+                    const newHref = `/mobile/apply/app?job_id=${jobId}&job_title=${encodeURIComponent(jobTitle)}&company_name=${encodeURIComponent(company)}&location=${encodeURIComponent(location)}&job_type=${encodeURIComponent(jobType)}&source=app`;
+                    link.setAttribute('href', newHref);
+                });
+                
+                // إعداد أزرار التقديم الفوري (للتطبيق فقط)
+                const appQuickApplyButtons = document.querySelectorAll('.app-quick-apply-btn');
+                appQuickApplyButtons.forEach(button => {
+                    button.style.display = 'block';
+                    button.addEventListener('click', function() {
+                        const jobData = {
+                            job_id: this.getAttribute('data-job-id'),
+                            job_title: this.getAttribute('data-job-title'),
+                            company_name: this.getAttribute('data-company'),
+                            location: this.getAttribute('data-location'),
+                            job_type: this.getAttribute('data-job-type'),
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        // استخدام واجهة التطبيق إذا كانت متاحة
+                        if (window.android && window.android.openQuickApply) {
+                            window.android.openQuickApply(JSON.stringify(jobData));
+                        } else {
+                            // فتح صفحة التقديم المخصصة
+                            const url = `/mobile/apply/app?job_id=${jobData.job_id}&job_title=${encodeURIComponent(jobData.job_title)}&company_name=${encodeURIComponent(jobData.company_name)}&location=${encodeURIComponent(jobData.location)}&job_type=${encodeURIComponent(jobData.job_type)}&source=app`;
+                            window.location.href = url;
+                        }
+                    });
+                });
+            }
+
+            // تحسين أزرار التقديم السريع
+            const quickApplyButtons = document.querySelectorAll('.quick-apply-btn');
+            
+            quickApplyButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    // إذا كان المستخدم داخل التطبيق، نتعامل بشكل مختلف
+                    if (isInApp) {
+                        // لا نحتاج لمنع السلوك الافتراضي داخل التطبيق
+                        return true;
+                    }
+                    
+                    // إذا كان المستخدم على موقع عادي (ليس في التطبيق)
+                    if (/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                        // نفتح صفحة التقديم العادية للموبايل
+                        const originalHref = this.getAttribute('href');
+                        const mobileHref = originalHref.replace('/mobile/apply/app', '/mobile/apply');
+                        this.setAttribute('href', mobileHref);
+                    }
+                    
+                    // رسالة تأكيد
+                    const jobTitle = this.getAttribute('data-job-title');
+                    if (jobTitle && !isInApp) {
+                        if (confirm(`هل تريد التقديم السريع على وظيفة "${jobTitle}"؟`)) {
+                            return true;
+                        } else {
+                            e.preventDefault();
+                            return false;
+                        }
+                    }
+                });
+            });
+            
+            // إضافة تأثيرات للبطاقات
+            const jobCards = document.querySelectorAll('.job-card');
+            jobCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 3px 10px rgba(0,0,0,0.1)';
+                });
+            });
+
+            // إظهار رسالة ترحيب خاصة للتطبيق
+            if (isInApp) {
+                setTimeout(() => {
+                    console.log('🎯 مرحباً بك في تطبيق بوابتي للتوظيف!');
+                    console.log('📱 يمكنك الآن استخدام ميزات التقديم السريع المتقدمة');
+                }, 1000);
+            }
+        });
+        
+        // دالة للكشف عن التطبيق
+        function isFromApp() {
+            return window.android || /MyJobPortalApp/i.test(navigator.userAgent);
+        }
+
+        // دالة لفتح التقديم السريع من التطبيق
+        function openQuickApplyInApp(jobData) {
+            if (window.android && window.android.openQuickApply) {
+                window.android.openQuickApply(JSON.stringify(jobData));
+            } else {
+                // نسخة احتياطية
+                const url = `/mobile/apply/app?job_id=${jobData.job_id}&job_title=${encodeURIComponent(jobData.job_title)}&company_name=${encodeURIComponent(jobData.company_name)}&location=${encodeURIComponent(jobData.location)}&job_type=${encodeURIComponent(jobData.job_type)}&source=app`;
+                window.location.href = url;
+            }
+        }
+    </script>
 </body>
 </html>
