@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقديم السريع - بوابتي للتوظيف</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; padding: 20px;
+        }
+        .container { max-width: 100%; margin: 0 auto; }
+        .header { 
+            background: linear-gradient(135deg, #ce1126, #a4001a);
+            color: white; padding: 20px; border-radius: 15px;
+            text-align: center; margin-bottom: 20px;
+        }
+        .form-container {
+            background: white; padding: 25px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-weight: bold; margin-bottom: 8px; }
+        .form-input { 
+            width: 100%; padding: 15px; border: 2px solid #ddd;
+            border-radius: 10px; font-size: 16px;
+        }
+        .app-features {
+            background: #f8f9fa; padding: 20px; border-radius: 10px;
+            margin: 20px 0; text-align: center;
+        }
+        .feature-item { 
+            display: inline-block; margin: 0 15px; 
+            text-align: center; color: #666;
+        }
+        .btn { 
+            display: block; width: 100%; padding: 15px;
+            background: #ce1126; color: white; border: none;
+            border-radius: 10px; font-size: 18px; font-weight: bold;
+            margin: 10px 0; cursor: pointer;
+        }
+        .btn-secondary { background: #6c757d; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>📱 التقديم السريع</h2>
+            <p>استخدم إمكانيات التطبيق للتقديم بسهولة</p>
+        </div>
+
+        <div class="form-container">
+            <!-- معلومات الوظيفة -->
+            <div class="job-info">
+                <h3 id="jobTitle">وظيفة</h3>
+                <p id="companyName">شركة</p>
+                <div class="job-meta">
+                    <span>📍 <span id="jobLocation">موقع</span></span>
+                    <span>⏰ <span id="jobType">نوع</span></span>
+                </div>
+            </div>
+
+            <!-- نموذج البيانات الأساسية -->
+            <form id="applicationForm">
+                <div class="form-group">
+                    <label class="form-label">الاسم الكامل</label>
+                    <input type="text" class="form-input" id="fullName" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">البريد الإلكتروني</label>
+                    <input type="email" class="form-input" id="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="tel" class="form-input" id="phone">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">رسالة التقديم (اختياري)</label>
+                    <textarea class="form-input" id="coverLetter" rows="4"></textarea>
+                </div>
+            </form>
+
+            <!-- ميزات التطبيق -->
+            <div class="app-features">
+                <h4>🎯 استخدم إمكانيات التطبيق</h4>
+                <div class="feature-item">
+                    <div style="font-size: 2rem;">📄</div>
+                    <div>رفع السيرة الذاتية</div>
+                    <small>استخدم زر الرفع في التطبيق</small>
+                </div>
+                <div class="feature-item">
+                    <div style="font-size: 2rem;">🎥</div>
+                    <div>فيديو التعريف</div>
+                    <small>استخدم زر التسجيل في التطبيق</small>
+                </div>
+            </div>
+
+            <!-- أزرار الإجراء -->
+            <button class="btn" onclick="submitApplication()">إرسال الطلب</button>
+            <button class="btn btn-secondary" onclick="closePage()">إلغاء</button>
+        </div>
+    </div>
+
+    <script>
+        // تحميل بيانات الوظيفة من URL
+        const urlParams = new URLSearchParams(window.location.search);
+        document.getElementById('jobTitle').textContent = urlParams.get('job_title') || 'وظيفة';
+        document.getElementById('companyName').textContent = urlParams.get('company_name') || 'شركة';
+        document.getElementById('jobLocation').textContent = urlParams.get('location') || 'غير محدد';
+        document.getElementById('jobType').textContent = urlParams.get('job_type') || 'دوام كامل';
+
+        function submitApplication() {
+            const formData = {
+                full_name: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                cover_letter: document.getElementById('coverLetter').value,
+                job_id: urlParams.get('job_id') || '1'
+            };
+
+            // هنا سيتم إرسال البيانات عبر التطبيق
+            if (window.android && window.android.submitApplication) {
+                window.android.submitApplication(JSON.stringify(formData));
+            } else {
+                alert('البيانات جاهزة للإرسال عبر التطبيق');
+                // في الواقع، التطبيق سيتولى عملية الرفع
+            }
+        }
+
+        function closePage() {
+            if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.close();
+            }
+        }
+
+        // تعبئة تلقائية إذا كانت البيانات محفوظة
+        window.addEventListener('load', function() {
+            // يمكن إضافة تعبئة تلقائية من localStorage
+        });
+    </script>
+</body>
+</html>
