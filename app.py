@@ -684,19 +684,46 @@ def upload_video():
     }), 200
 
 # ==============================
-# 📱 واجهة التقديم للموبايل
+# 📱 واجهات التقديم للموبايل
 # ==============================
 
 @app.route('/mobile/apply')
 def mobile_apply():
-    """واجهة التقديم للموبايل"""
+    """واجهة التقديم للموبايل - الاختيار بين التطبيق والويب"""
     job_id = request.args.get('job_id', '1')
     job_title = request.args.get('job_title', 'وظيفة عامة')
     company_name = request.args.get('company_name', 'شركة')
     location = request.args.get('location', 'غير محدد')
     job_type = request.args.get('job_type', 'دوام كامل')
     
-    return render_template('mobile_apply.html',
+    # إذا كان الطلب من التطبيق، استخدم الصفحة المخصصة
+    user_agent = request.headers.get('User-Agent', '')
+    if 'MyJobPortalApp' in user_agent or request.args.get('source') == 'app':
+        return render_template('mobile_apply_app.html',
+                             job_id=job_id,
+                             job_title=job_title,
+                             company_name=company_name,
+                             location=location,
+                             job_type=job_type)
+    else:
+        # إذا كان من متصفح عادي، استخدم الصفحة العادية
+        return render_template('mobile_apply.html',
+                             job_id=job_id,
+                             job_title=job_title,
+                             company_name=company_name,
+                             location=location,
+                             job_type=job_type)
+
+@app.route('/mobile/apply/app')
+def mobile_apply_app():
+    """واجهة التقديم المخصصة للتطبيق"""
+    job_id = request.args.get('job_id', '1')
+    job_title = request.args.get('job_title', 'وظيفة عامة')
+    company_name = request.args.get('company_name', 'شركة')
+    location = request.args.get('location', 'غير محدد')
+    job_type = request.args.get('job_type', 'دوام كامل')
+    
+    return render_template('mobile_apply_app.html',
                          job_id=job_id,
                          job_title=job_title,
                          company_name=company_name,
@@ -818,6 +845,7 @@ def test_page():
             'register': '/company/register',
             'api_stats': '/api/stats',
             'mobile_apply': '/mobile/apply',
+            'mobile_apply_app': '/mobile/apply/app',
             'test': '/test'
         }
     })
