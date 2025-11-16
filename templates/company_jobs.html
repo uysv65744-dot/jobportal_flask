@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الوظائف - بوابتي للتوظيف</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --yemen-red: #ce1126;
+            --dark: #2c3e50;
+            --light: #f8f9fa;
+        }
+        
+        body {
+            background: var(--light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background: var(--dark);
+            color: white;
+            min-height: 100vh;
+            padding: 0;
+            position: fixed;
+            width: 250px;
+        }
+        
+        .sidebar .nav-link {
+            color: #ecf0f1;
+            padding: 15px 20px;
+            border-bottom: 1px solid #34495e;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: #34495e;
+            color: var(--yemen-red);
+        }
+        
+        .main-content {
+            margin-right: 250px;
+            padding: 20px;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--yemen-red), #a4001a) !important;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .job-card {
+            border-right: 4px solid var(--yemen-red);
+            transition: all 0.3s ease;
+        }
+        
+        .job-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--yemen-red), #a4001a);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+        }
+        
+        .badge-active {
+            background: #27ae60;
+        }
+        
+        .badge-inactive {
+            background: #95a5a6;
+        }
+        
+        .action-buttons .btn {
+            padding: 5px 10px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- الشريط الجانبي -->
+    <nav class="sidebar">
+        <div class="sidebar-sticky pt-3">
+            <div class="text-center p-3 border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-door-open me-2"></i>
+                    بوابتي للتوظيف
+                </h5>
+                <small class="text-muted">لوحة تحكم الشركة</small>
+            </div>
+            
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/company/dashboard">
+                        <i class="fas fa-tachometer-alt"></i>لوحة التحكم
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/company/jobs">
+                        <i class="fas fa-briefcase"></i>إدارة الوظائف
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/company/applicants">
+                        <i class="fas fa-users"></i>المتقدمين
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/company/logout">
+                        <i class="fas fa-sign-out-alt"></i>تسجيل الخروج
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="main-content">
+        <!-- شريط التنقل العلوي -->
+        <nav class="navbar navbar-dark mb-4">
+            <div class="container-fluid">
+                <span class="navbar-brand">
+                    إدارة الوظائف
+                </span>
+                <div class="d-flex">
+                    <a href="/company/dashboard" class="btn btn-outline-light btn-sm me-2">
+                        <i class="fas fa-arrow-right me-1"></i>الرئيسية
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- رسائل التنبيه -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- رأس الصفحة -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold">الوظائف المنشورة</h4>
+            <a href="/company/jobs/add" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>إضافة وظيفة جديدة
+            </a>
+        </div>
+
+        <!-- قائمة الوظائف -->
+        <div class="row">
+            <div class="col-12">
+                {% if jobs %}
+                    {% for job in jobs %}
+                    <div class="card job-card">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <h5 class="fw-bold mb-2">{{ job.title }}</h5>
+                                            <div class="d-flex flex-wrap gap-2 mb-2">
+                                                {% if job.category %}
+                                                <span class="badge bg-info">{{ job.category }}</span>
+                                                {% endif %}
+                                                
+                                                {% if job.job_type %}
+                                                <span class="badge bg-primary">{{ job.job_type }}</span>
+                                                {% endif %}
+                                                
+                                                {% if job.location %}
+                                                <span class="badge bg-light text-dark">
+                                                    <i class="fas fa-map-marker-alt me-1"></i>{{ job.location }}
+                                                </span>
+                                                {% endif %}
+                                                
+                                                <span class="badge {% if job.is_active %}badge-active{% else %}badge-inactive{% endif %}">
+                                                    {{ 'نشطة' if job.is_active else 'مغلقة' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if job.description %}
+                                    <p class="text-dark mb-3">{{ job.description[:200] }}{% if job.description|length > 200 %}...{% endif %}</p>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex flex-wrap gap-3 text-muted">
+                                        {% if job.salary_range %}
+                                        <small>
+                                            <i class="fas fa-money-bill-wave me-1"></i>{{ job.salary_range }}
+                                        </small>
+                                        {% endif %}
+                                        
+                                        <small>
+                                            <i class="fas fa-clock me-1"></i>{{ job.created_at[:16] }}
+                                        </small>
+                                        
+                                        {% if job.deadline %}
+                                        <small>
+                                            <i class="fas fa-calendar-times me-1"></i>ينتهي في {{ job.deadline }}
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-4 text-md-end">
+                                    <div class="action-buttons mb-3">
+                                        <a href="/job/{{ job.id }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="/company/jobs/edit/{{ job.id }}" class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="/company/jobs/toggle/{{ job.id }}" method="POST" style="display: inline;">
+                                            <button type="submit" class="btn btn-sm {% if job.is_active %}btn-warning{% else %}btn-success{% endif %}">
+                                                <i class="fas {% if job.is_active %}fa-pause{% else %}fa-play{% endif %}"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2">
+                                        <a href="/company/applicants?job_id={{ job.id }}" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-users me-1"></i>عرض المتقدمين
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">لا توجد وظائف حالياً</h4>
+                            <p class="text-muted mb-4">ابدأ بنشر أول وظيفة لجذب أفضل الكفاءات</p>
+                            <a href="/company/jobs/add" class="btn btn-primary btn-lg">
+                                <i class="fas fa-plus me-2"></i>إضافة أول وظيفة
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- إحصائيات سريعة -->
+        {% if jobs %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">إحصائيات الوظائف</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <h4 class="fw-bold text-primary">{{ jobs|length }}</h4>
+                                <p class="text-muted mb-0">إجمالي الوظائف</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h4 class="fw-bold text-success">{{ jobs|selectattr('is_active')|list|length }}</h4>
+                                <p class="text-muted mb-0">وظائف نشطة</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h4 class="fw-bold text-warning">{{ jobs|rejectattr('is_active')|list|length }}</h4>
+                                <p class="text-muted mb-0">وظائف مغلقة</p>
+                            </div>
+                            <div class="col-md-3">
+                                <h4 class="fw-bold text-info">{{ jobs|selectattr('deadline')|list|length }}</h4>
+                                <p class="text-muted mb-0">وظائف بموعد نهائي</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
