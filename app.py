@@ -570,6 +570,7 @@ def api_upload():
         email = request.form.get('email')
         phone = request.form.get('phone')
         job_id = request.form.get('job_id')
+        cover_letter = request.form.get('cover_letter')
 
         if not full_name or not email:
             return jsonify({'error': 'يرجى إدخال الاسم والبريد الإلكتروني'}), 400
@@ -614,21 +615,23 @@ def api_upload():
 
         conn = get_db_connection()
         cur = conn.cursor()
-        cur.execute('''INSERT INTO applicants (job_id, full_name, email, phone, cv_path, video_path) 
-                      VALUES (?, ?, ?, ?, ?, ?)''',
-                    (job_id, full_name, email, phone, cv_path, video_path))
+        cur.execute('''INSERT INTO applicants (job_id, full_name, email, phone, cv_path, video_path, cover_letter) 
+                      VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                    (job_id, full_name, email, phone, cv_path, video_path, cover_letter))
         conn.commit()
+        applicant_id = cur.lastrowid
         conn.close()
 
         return jsonify({
-            'message': 'تم رفع الطلب بنجاح ✅', 
+            'success': True,
+            'message': 'تم تقديم طلبك بنجاح! سنقوم بمراجعته قريباً.', 
             'cv': cv_path, 
             'video': video_path,
-            'applicant_id': cur.lastrowid
+            'applicant_id': applicant_id
         }), 201
 
     except Exception as e:
-        return jsonify({'error': 'حدث خطأ أثناء معالجة الطلب'}), 500
+        return jsonify({'error': f'حدث خطأ أثناء معالجة الطلب: {str(e)}'}), 500
 
 @app.route('/upload_cv', methods=['POST'])
 @limiter.limit("20 per minute")
