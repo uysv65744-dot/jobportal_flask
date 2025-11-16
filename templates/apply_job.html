@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقديم على {{ job.title }} - بوابتي للتوظيف</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --yemen-red: #ce1126;
+            --dark: #2c3e50;
+            --light: #f8f9fa;
+        }
+        
+        body {
+            background: var(--light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--yemen-red), #a4001a) !important;
+        }
+        
+        .yemen-flag {
+            height: 20px;
+            width: 30px;
+            background: linear-gradient(to bottom, #ce1126 33%, #ffffff 33%, #ffffff 66%, #000000 66%);
+            display: inline-block;
+            margin: 0 10px;
+            border-radius: 2px;
+        }
+        
+        .apply-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: none;
+            margin-bottom: 30px;
+        }
+        
+        .job-summary {
+            background: linear-gradient(135deg, var(--yemen-red), #a4001a);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--yemen-red), #a4001a);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        
+        .btn-outline-primary {
+            border: 2px solid var(--yemen-red);
+            color: var(--yemen-red);
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--yemen-red);
+            box-shadow: 0 0 0 0.2rem rgba(206, 17, 38, 0.25);
+        }
+        
+        .upload-area {
+            border: 2px dashed #bdc3c7;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(236, 240, 241, 0.5);
+        }
+        
+        .upload-area:hover {
+            border-color: var(--yemen-red);
+            background: rgba(52, 152, 219, 0.1);
+        }
+        
+        .upload-area.dragover {
+            border-color: var(--yemen-red);
+            background: rgba(206, 17, 38, 0.1);
+        }
+        
+        .file-badge {
+            background: var(--yemen-red);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: inline-block;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+        
+        .step-indicator::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: 0;
+            left: 0;
+            height: 3px;
+            background: #e9ecef;
+            z-index: 1;
+        }
+        
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .step.active {
+            background: var(--yemen-red);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .step-label {
+            position: absolute;
+            top: 45px;
+            right: 50%;
+            transform: translateX(50%);
+            white-space: nowrap;
+            font-size: 0.8rem;
+            color: var(--dark);
+        }
+        
+        .required::after {
+            content: " *";
+            color: var(--yemen-red);
+        }
+    </style>
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-door-open me-2"></i>
+                بوابتي للتوظيف
+                <span class="yemen-flag"></span>
+            </a>
+            
+            <div class="navbar-nav me-auto">
+                <a class="nav-link" href="/">الرئيسية</a>
+                <a class="nav-link" href="/jobs">الوظائف</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- محتوى الصفحة -->
+    <div class="container py-5">
+        <!-- رسائل التنبيه -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- مؤشر الخطوات -->
+                <div class="step-indicator">
+                    <div class="step active">
+                        1
+                        <span class="step-label">المعلومات الشخصية</span>
+                    </div>
+                    <div class="step active">
+                        2
+                        <span class="step-label">المرفقات</span>
+                    </div>
+                    <div class="step">
+                        3
+                        <span class="step-label">التأكيد</span>
+                    </div>
+                </div>
+
+                <!-- ملخص الوظيفة -->
+                <div class="job-summary">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h3 class="fw-bold mb-2">{{ job.title }}</h3>
+                            <h5 class="mb-3">{{ job.company_name }}</h5>
+                            <div class="d-flex flex-wrap gap-3">
+                                {% if job.location %}
+                                <span><i class="fas fa-map-marker-alt me-2"></i>{{ job.location }}</span>
+                                {% endif %}
+                                {% if job.job_type %}
+                                <span><i class="fas fa-briefcase me-2"></i>{{ job.job_type }}</span>
+                                {% endif %}
+                                {% if job.salary_range %}
+                                <span><i class="fas fa-money-bill-wave me-2"></i>{{ job.salary_range }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end text-center">
+                            <a href="/job/{{ job.id }}" class="btn btn-light">
+                                <i class="fas fa-arrow-right me-2"></i>عودة للتفاصيل
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نموذج التقديم -->
+                <div class="apply-card">
+                    <div class="card-body p-5">
+                        <h4 class="fw-bold text-center mb-4">نموذج التقديم على الوظيفة</h4>
+                        
+                        <form method="POST" action="/apply/{{ job.id }}" enctype="multipart/form-data">
+                            <!-- المعلومات الشخصية -->
+                            <div class="row g-3 mb-5">
+                                <div class="col-md-6">
+                                    <label for="full_name" class="form-label required">الاسم الكامل</label>
+                                    <input type="text" class="form-control" id="full_name" name="full_name" 
+                                           placeholder="ادخل اسمك الكامل" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label required">البريد الإلكتروني</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           placeholder="ادخل بريدك الإلكتروني" required>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="phone" class="form-label">رقم الهاتف</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" 
+                                           placeholder="ادخل رقم هاتفك">
+                                </div>
+
+                                <div class="col-12">
+                                    <label for="cover_letter" class="form-label">خطاب التقديم (اختياري)</label>
+                                    <textarea class="form-control" id="cover_letter" name="cover_letter" 
+                                              rows="4" placeholder="اكتب رسالة تعريفية عن نفسك ولماذا أنت مناسب لهذه الوظيفة..."></textarea>
+                                    <div class="form-text">يمكنك كتابة رسالة تعريفية تبرز فيها مهاراتك وخبراتك</div>
+                                </div>
+                            </div>
+
+                            <!-- رفع الملفات -->
+                            <div class="row g-4">
+                                <!-- السيرة الذاتية -->
+                                <div class="col-md-6">
+                                    <label class="form-label required">السيرة الذاتية</label>
+                                    <div class="upload-area" id="cvUploadArea">
+                                        <i class="fas fa-file-pdf fa-3x mb-3 text-danger"></i>
+                                        <h6 class="fw-bold">رفع السيرة الذاتية</h6>
+                                        <p class="text-muted mb-2">اسحب الملف هنا أو انقر للاختيار</p>
+                                        <small class="text-muted">PDF, DOC, DOCX - الحجم الأقصى: 5MB</small>
+                                        <input type="file" id="cvFile" name="cv" accept=".pdf,.doc,.docx" hidden required>
+                                    </div>
+                                    <div id="cvFileName"></div>
+                                </div>
+
+                                <!-- فيديو التعريف -->
+                                <div class="col-md-6">
+                                    <label class="form-label">فيديو التعريف (اختياري)</label>
+                                    <div class="upload-area" id="videoUploadArea">
+                                        <i class="fas fa-video fa-3x mb-3 text-primary"></i>
+                                        <h6 class="fw-bold">رفع فيديو التعريف</h6>
+                                        <p class="text-muted mb-2">اسحب الملف هنا أو انقر للاختيار</p>
+                                        <small class="text-muted">MP4, AVI, MOV - الحجم الأقصى: 60MB</small>
+                                        <input type="file" id="videoFile" name="intro_video" accept=".mp4,.avi,.mov" hidden>
+                                    </div>
+                                    <div id="videoFileName"></div>
+                                </div>
+                            </div>
+
+                            <!-- نصائح -->
+                            <div class="alert alert-info mt-4">
+                                <h6 class="fw-bold mb-3"><i class="fas fa-lightbulb me-2"></i>نصائح للتقديم الناجح:</h6>
+                                <ul class="mb-0">
+                                    <li>تأكد من صحة المعلومات الشخصية</li>
+                                    <li>ارفع سيرة ذاتية محدثة وواضحة</li>
+                                    <li>فيديو التعريف يزيد من فرص قبولك</li>
+                                    <li>خطاب التقديم الجيد يميزك عن الآخرين</li>
+                                </ul>
+                            </div>
+
+                            <!-- أزرار -->
+                            <div class="d-flex justify-content-between align-items-center mt-5">
+                                <a href="/job/{{ job.id }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-right me-2"></i>إلغاء
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-paper-plane me-2"></i>إرسال الطلب
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الفوتر -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p class="mb-0">&copy; 2024 بوابتي للتوظيف. جميع الحقوق محفوظة.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // إعداد السحب والإفلات
+        function setupDragAndDrop() {
+            const cvArea = document.getElementById('cvUploadArea');
+            const videoArea = document.getElementById('videoUploadArea');
+            const cvInput = document.getElementById('cvFile');
+            const videoInput = document.getElementById('videoFile');
+
+            // للسيرة الذاتية
+            cvArea.addEventListener('click', () => cvInput.click());
+            setupDropZone(cvArea, cvInput, 'cvFileName');
+
+            // للفيديو
+            videoArea.addEventListener('click', () => videoInput.click());
+            setupDropZone(videoArea, videoInput, 'videoFileName');
+        }
+
+        function setupDropZone(area, input, fileNameDiv) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                area.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                area.addEventListener(eventName, () => area.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                area.addEventListener(eventName, () => area.classList.remove('dragover'), false);
+            });
+
+            area.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    input.files = files;
+                    updateFileName(fileNameDiv, files[0].name);
+                }
+            });
+
+            input.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    updateFileName(fileNameDiv, e.target.files[0].name);
+                }
+            });
+        }
+
+        function updateFileName(divId, fileName) {
+            document.getElementById(divId).innerHTML = 
+                `<span class="file-badge"><i class="fas fa-check me-2"></i>${fileName}</span>`;
+        }
+
+        // التحقق من النموذج قبل الإرسال
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const cvFile = document.getElementById('cvFile').files[0];
+            if (!cvFile) {
+                e.preventDefault();
+                alert('يرجى رفع السيرة الذاتية');
+                return;
+            }
+
+            // التحقق من حجم الملفات
+            const maxCvSize = 5 * 1024 * 1024; // 5MB
+            const maxVideoSize = 60 * 1024 * 1024; // 60MB
+
+            if (cvFile.size > maxCvSize) {
+                e.preventDefault();
+                alert('حجم السيرة الذاتية كبير جداً (5MB كحد أقصى)');
+                return;
+            }
+
+            const videoFile = document.getElementById('videoFile').files[0];
+            if (videoFile && videoFile.size > maxVideoSize) {
+                e.preventDefault();
+                alert('حجم الفيديو كبير جداً (60MB كحد أقصى)');
+                return;
+            }
+        });
+
+        // التهيئة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDragAndDrop();
+        });
+    </script>
+</body>
+</html>
