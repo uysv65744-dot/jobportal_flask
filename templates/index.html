@@ -1,566 +1,547 @@
-from flask import Flask, request, jsonify, send_from_directory, render_template, redirect, url_for, session, flash
-from flask_cors import CORS
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from werkzeug.security import generate_password_hash, check_password_hash
-import os
-import sqlite3
-from werkzeug.utils import secure_filename
-import config
-from datetime import datetime
-import re
-
-app = Flask(__name__)
-app.config['SECRET_KEY'] = config.SECRET_KEY
-CORS(app)
-
-# Rate Limiting
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"]
-)
-
-app.config['UPLOAD_FOLDER'] = config.UPLOAD_FOLDER
-app.config['CV_FOLDER'] = config.CV_FOLDER
-app.config['VIDEO_FOLDER'] = config.VIDEO_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = config.MAX_VIDEO_SIZE + config.MAX_CV_SIZE
-
-os.makedirs(app.config['CV_FOLDER'], exist_ok=True)
-os.makedirs(app.config['VIDEO_FOLDER'], exist_ok=True)
-
-# قاعدة البيانات
-def get_db_connection():
-    conn = sqlite3.connect(config.DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
-    # جدول المستخدمين (شركات)
-    cur.execute('''CREATE TABLE IF NOT EXISTS companies (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        phone TEXT,
-        location TEXT,
-        description TEXT,
-        logo_path TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        is_active BOOLEAN DEFAULT 1
-    )''')
-    
-    # جدول الوظائف
-    cur.execute('''CREATE TABLE IF NOT EXISTS jobs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        company_id INTEGER,
-        title TEXT NOT NULL,
-        category TEXT,
-        job_type TEXT,
-        salary_range TEXT,
-        location TEXT,
-        description TEXT,
-        requirements TEXT,
-        benefits TEXT,
-        experience_level TEXT,
-        deadline DATE,
-        is_active BOOLEAN DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (company_id) REFERENCES companies (id)
-    )''')
-    
-    # جدول المتقدمين
-    cur.execute('''CREATE TABLE IF NOT EXISTS applicants (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        job_id INTEGER,
-        full_name TEXT NOT NULL,
-        email TEXT NOT NULL,
-        phone TEXT,
-        cv_path TEXT,
-        video_path TEXT,
-        cover_letter TEXT,
-        status TEXT DEFAULT 'جديد',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (job_id) REFERENCES jobs (id)
-    )''')
-    
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# السماح بالامتدادات
-def allowed_file(filename, allowed_exts):
-    if '.' not in filename:
-        return False
-    ext = filename.rsplit('.', 1)[1].lower()
-    return ext in allowed_exts
-
-# تحقق من تسجيل الدخول
-def login_required(f):
-    from functools import wraps
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'company_id' not in session:
-            return redirect(url_for('company_login'))
-        return f(*args, **kwargs)
-    return decorated_function
-
-# ==============================
-# 🏠 الصفحات الرئيسية
-# ==============================
-
-@app.route('/')
-def index():
-    conn = get_db_connection()
-    featured_jobs = conn.execute('''
-        SELECT j.*, c.name as company_name 
-        FROM jobs j 
-        JOIN companies c ON j.company_id = c.id 
-        WHERE j.is_active = 1 
-        ORDER BY j.created_at DESC 
-        LIMIT 6
-    ''').fetchall()
-    
-    stats = {
-        'total_jobs': conn.execute('SELECT COUNT(*) FROM jobs WHERE is_active = 1').fetchone()[0],
-        'total_companies': conn.execute('SELECT COUNT(*) FROM companies WHERE is_active = 1').fetchone()[0],
-        'total_applicants': conn.execute('SELECT COUNT(*) FROM applicants').fetchone()[0]
-    }
-    conn.close()
-    
-    return render_template('index.html', 
-                         featured_jobs=featured_jobs, 
-                         stats=stats)
-
-@app.route('/jobs')
-def jobs():
-    category = request.args.get('category', '')
-    job_type = request.args.get('type', '')
-    location = request.args.get('location', '')
-    
-    conn = get_db_connection()
-    
-    query = '''
-        SELECT j.*, c.name as company_name, c.location as company_location 
-        FROM jobs j 
-        JOIN companies c ON j.company_id = c.id 
-        WHERE j.is_active = 1
-    '''
-    params = []
-    
-    if category:
-        query += ' AND j.category = ?'
-        params.append(category)
-    if job_type:
-        query += ' AND j.job_type = ?'
-        params.append(job_type)
-    if location:
-        query += ' AND (j.location LIKE ? OR c.location LIKE ?)'
-        params.append(f'%{location}%')
-        params.append(f'%{location}%')
-    
-    query += ' ORDER BY j.created_at DESC'
-    jobs = conn.execute(query, params).fetchall()
-    
-    categories = conn.execute('SELECT DISTINCT category FROM jobs WHERE category IS NOT NULL').fetchall()
-    job_types = conn.execute('SELECT DISTINCT job_type FROM jobs WHERE job_type IS NOT NULL').fetchall()
-    
-    conn.close()
-    
-    return render_template('jobs.html', 
-                         jobs=jobs, 
-                         categories=categories,
-                         job_types=job_types,
-                         selected_category=category,
-                         selected_type=job_type,
-                         selected_location=location)
-
-# ==============================
-# 👥 تسجيل الشركات
-# ==============================
-
-@app.route('/company/register', methods=['GET', 'POST'])
-def company_register():
-    if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        phone = request.form.get('phone')
-        location = request.form.get('location')
-        description = request.form.get('description')
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>بوابتي للتوظيف - أفضل منصة توظيف يمنية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --yemen-red: #ce1126;
+            --yemen-black: #000000;
+        }
         
-        if not name or not email or not password:
-            flash('يرجى ملء جميع الحقول الإلزامية', 'error')
-            return render_template('register.html')
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
         
-        if len(password) < 6:
-            flash('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error')
-            return render_template('register.html')
+        .navbar {
+            background: linear-gradient(135deg, var(--yemen-red), #a4001a) !important;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
         
-        hashed_password = generate_password_hash(password)
+        .hero-section {
+            background: linear-gradient(rgba(44, 62, 80, 0.9), rgba(44, 62, 80, 0.9)), 
+                        url('/static/images/yemen-pattern.png');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+        }
         
-        conn = get_db_connection()
-        try:
-            cur = conn.cursor()
-            cur.execute('''INSERT INTO companies (name, email, password, phone, location, description) 
-                         VALUES (?, ?, ?, ?, ?, ?)''',
-                       (name, email, hashed_password, phone, location, description))
-            conn.commit()
-            company_id = cur.lastrowid
-            conn.close()
+        .yemen-flag {
+            height: 20px;
+            width: 30px;
+            background: linear-gradient(to bottom, #ce1126 33%, #ffffff 33%, #ffffff 66%, #000000 66%);
+            display: inline-block;
+            margin: 0 10px;
+            border-radius: 2px;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: none;
+            text-align: center;
+            height: 100%;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+        
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, var(--yemen-red), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            color: white;
+            font-size: 2rem;
+        }
+        
+        .job-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: none;
+            border-right: 4px solid var(--yemen-red);
+        }
+        
+        .job-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--yemen-red), #a4001a);
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(206, 17, 38, 0.4);
+        }
+        
+        .btn-outline-primary {
+            border: 2px solid var(--yemen-red);
+            color: var(--yemen-red);
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--yemen-red);
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--yemen-red);
+            display: block;
+        }
+        
+        .stat-label {
+            color: var(--dark);
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        
+        .section-title {
+            position: relative;
+            margin-bottom: 3rem;
+            text-align: center;
+            color: var(--dark);
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            right: 50%;
+            transform: translateX(50%);
+            width: 80px;
+            height: 3px;
+            background: var(--yemen-red);
+            border-radius: 2px;
+        }
+        
+        .company-logo {
+            width: 60px;
+            height: 60px;
+            background: var(--light);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: var(--yemen-red);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+        }
+        
+        .footer {
+            background: var(--dark);
+            color: white;
+            padding: 50px 0 20px;
+            margin-top: 50px;
+        }
+        
+        .social-links a {
+            color: white;
+            font-size: 1.2rem;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            color: var(--yemen-red);
+            transform: scale(1.2);
+        }
+        
+        .search-box {
+            background: white;
+            border-radius: 50px;
+            padding: 10px 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-top: -50px;
+            position: relative;
+            z-index: 100;
+        }
+        
+        .badge-yemen {
+            background: var(--yemen-red);
+            color: white;
+        }
+        
+        .yemen-theme-text {
+            color: var(--yemen-red);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- شريط التنقل -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-door-open me-2"></i>
+                بوابتي للتوظيف
+                <span class="yemen-flag"></span>
+            </a>
             
-            session['company_id'] = company_id
-            session['company_name'] = name
-            flash('تم تسجيل الشركة بنجاح!', 'success')
-            return redirect(url_for('company_dashboard'))
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
             
-        except sqlite3.IntegrityError:
-            conn.close()
-            flash('البريد الإلكتروني أو اسم الشركة مسجل مسبقاً', 'error')
-            return render_template('register.html')
-    
-    return render_template('register.html')
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/">الرئيسية</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/jobs">الوظائف</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">عن المنصة</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">اتصل بنا</a>
+                    </li>
+                </ul>
+                
+                <div class="navbar-nav">
+                    <a href="/company/login" class="btn btn-outline-light me-2">
+                        <i class="fas fa-sign-in-alt me-1"></i>تسجيل الدخول
+                    </a>
+                    <a href="/company/register" class="btn btn-light">
+                        <i class="fas fa-building me-1"></i>سجل شركتك
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
 
-@app.route('/company/login', methods=['GET', 'POST'])
-def company_login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
-        conn = get_db_connection()
-        company = conn.execute('SELECT * FROM companies WHERE email = ? AND is_active = 1', (email,)).fetchone()
-        conn.close()
-        
-        if company and check_password_hash(company['password'], password):
-            session['company_id'] = company['id']
-            session['company_name'] = company['name']
-            flash('تم تسجيل الدخول بنجاح!', 'success')
-            return redirect(url_for('company_dashboard'))
-        else:
-            flash('البريد الإلكتروني أو كلمة المرور غير صحيحة', 'error')
-    
-    return render_template('login.html')
+    <!-- القسم الرئيسي -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <h1 class="display-4 fw-bold mb-4">
+                        بوابتك إلى أفضل الوظائف في اليمن
+                        <span class="yemen-flag"></span>
+                    </h1>
+                    <p class="lead mb-5">
+                        منصة "بوابتي للتوظيف" تربط أفضل الكفاءات اليمنية مع الشركات الرائدة في السوق المحلي والعالمي
+                    </p>
+                    
+                    <div class="row mt-5">
+                        <div class="col-md-8 mx-auto">
+                            <div class="search-box">
+                                <form action="/jobs" method="GET" class="row g-2">
+                                    <div class="col-md-4">
+                                        <input type="text" name="location" class="form-control border-0" placeholder="ابحث بالمكان...">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select name="category" class="form-select border-0">
+                                            <option value="">جميع التخصصات</option>
+                                            <option value="تكنولوجيا المعلومات">تكنولوجيا المعلومات</option>
+                                            <option value="المبيعات والتسويق">المبيعات والتسويق</option>
+                                            <option value="المحاسبة والمالية">المحاسبة والمالية</option>
+                                            <option value="الهندسة">الهندسة</option>
+                                            <option value="التعليم">التعليم</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="fas fa-search me-2"></i>ابحث عن وظائف
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-@app.route('/company/logout')
-def company_logout():
-    session.clear()
-    flash('تم تسجيل الخروج بنجاح', 'success')
-    return redirect(url_for('index'))
+    <!-- الإحصائيات -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="row g-4">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <span class="stat-number" id="totalJobs">0</span>
+                                <span class="stat-label">وظيفة شاغرة</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <span class="stat-number" id="totalCompanies">0</span>
+                                <span class="stat-label">شركة مسجلة</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <span class="stat-number" id="totalApplicants">0</span>
+                                <span class="stat-label">متقدم للوظائف</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <span class="stat-number" id="recentApplications">0</span>
+                                <span class="stat-label">طلب هذا الأسبوع</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-# ==============================
-# 🎛️ لوحة تحكم الشركة
-# ==============================
+    <!-- المميزات -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="section-title">لماذا تختار بوابتي للتوظيف؟</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <h4 class="yemen-theme-text">وظائف متنوعة</h4>
+                        <p>أفضل الوظائف في مختلف التخصصات والمجالات من كبرى الشركات اليمنية</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h4 class="yemen-theme-text">آمن وموثوق</h4>
+                        <p>منصة آمنة تحافظ على بياناتك وتضمن خصوصية معلوماتك</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <h4 class="yemen-theme-text">سهل وسريع</h4>
+                        <p>تقديم سريع للوظائف ومتابعة مباشرة لحالة طلباتك</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-@app.route('/company/dashboard')
-@login_required
-def company_dashboard():
-    conn = get_db_connection()
-    
-    company_id = session['company_id']
-    
-    # إحصائيات الشركة
-    stats = {
-        'total_jobs': conn.execute('SELECT COUNT(*) FROM jobs WHERE company_id = ?', (company_id,)).fetchone()[0],
-        'active_jobs': conn.execute('SELECT COUNT(*) FROM jobs WHERE company_id = ? AND is_active = 1', (company_id,)).fetchone()[0],
-        'total_applicants': conn.execute('''SELECT COUNT(*) FROM applicants a 
-                                         JOIN jobs j ON a.job_id = j.id 
-                                         WHERE j.company_id = ?''', (company_id,)).fetchone()[0],
-        'new_applicants': conn.execute('''SELECT COUNT(*) FROM applicants a 
-                                       JOIN jobs j ON a.job_id = j.id 
-                                       WHERE j.company_id = ? AND a.status = 'جديد' ''', (company_id,)).fetchone()[0]
-    }
-    
-    # أحدث الوظائف
-    jobs = conn.execute('''
-        SELECT * FROM jobs 
-        WHERE company_id = ? 
-        ORDER BY created_at DESC 
-        LIMIT 5
-    ''', (company_id,)).fetchall()
-    
-    # أحدث المتقدمين
-    recent_applicants = conn.execute('''
-        SELECT a.*, j.title as job_title 
-        FROM applicants a 
-        JOIN jobs j ON a.job_id = j.id 
-        WHERE j.company_id = ? 
-        ORDER BY a.created_at DESC 
-        LIMIT 10
-    ''', (company_id,)).fetchall()
-    
-    conn.close()
-    
-    return render_template('company_dashboard.html',
-                         stats=stats,
-                         jobs=jobs,
-                         applicants=recent_applicants)
-
-# ==============================
-# 💼 إدارة الوظائف
-# ==============================
-
-@app.route('/company/jobs')
-@login_required
-def company_jobs():
-    conn = get_db_connection()
-    jobs = conn.execute('''
-        SELECT * FROM jobs 
-        WHERE company_id = ? 
-        ORDER BY created_at DESC
-    ''', (session['company_id'],)).fetchall()
-    conn.close()
-    return render_template('company_jobs.html', jobs=jobs)
-
-@app.route('/company/jobs/add', methods=['GET', 'POST'])
-@login_required
-def add_job():
-    if request.method == 'POST':
-        title = request.form.get('title')
-        category = request.form.get('category')
-        job_type = request.form.get('job_type')
-        salary_range = request.form.get('salary_range')
-        location = request.form.get('location')
-        description = request.form.get('description')
-        requirements = request.form.get('requirements')
-        benefits = request.form.get('benefits')
-        experience_level = request.form.get('experience_level')
-        deadline = request.form.get('deadline')
-        
-        if not title:
-            flash('يرجى إدخال عنوان الوظيفة', 'error')
-            return render_template('add_job.html')
-        
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('''INSERT INTO jobs 
-                     (company_id, title, category, job_type, salary_range, location, 
-                      description, requirements, benefits, experience_level, deadline) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                   (session['company_id'], title, category, job_type, salary_range, location,
-                    description, requirements, benefits, experience_level, deadline))
-        conn.commit()
-        conn.close()
-        
-        flash('تم إضافة الوظيفة بنجاح!', 'success')
-        return redirect(url_for('company_jobs'))
-    
-    return render_template('add_job.html')
-
-# ==============================
-# 👤 إدارة المتقدمين
-# ==============================
-
-@app.route('/company/applicants')
-@login_required
-def company_applicants():
-    conn = get_db_connection()
-    applicants = conn.execute('''
-        SELECT a.*, j.title as job_title, c.name as company_name 
-        FROM applicants a 
-        JOIN jobs j ON a.job_id = j.id 
-        JOIN companies c ON j.company_id = c.id 
-        WHERE j.company_id = ? 
-        ORDER BY a.created_at DESC
-    ''', (session['company_id'],)).fetchall()
-    conn.close()
-    return render_template('company_applicants.html', applicants=applicants)
-
-@app.route('/company/applicants/<int:applicant_id>/update_status', methods=['POST'])
-@login_required
-def update_applicant_status(applicant_id):
-    new_status = request.form.get('status')
-    
-    conn = get_db_connection()
-    conn.execute('UPDATE applicants SET status = ? WHERE id = ?', (new_status, applicant_id))
-    conn.commit()
-    conn.close()
-    
-    flash('تم تحديث حالة المتقدم بنجاح', 'success')
-    return redirect(url_for('company_applicants'))
-
-# ==============================
-# 📤 التقديم على الوظائف (للمتقدمين)
-# ==============================
-
-@app.route('/apply/<int:job_id>', methods=['GET', 'POST'])
-def apply_job(job_id):
-    conn = get_db_connection()
-    job = conn.execute('''
-        SELECT j.*, c.name as company_name 
-        FROM jobs j 
-        JOIN companies c ON j.company_id = c.id 
-        WHERE j.id = ? AND j.is_active = 1
-    ''', (job_id,)).fetchone()
-    
-    if not job:
-        conn.close()
-        flash('الوظيفة غير متاحة', 'error')
-        return redirect(url_for('jobs'))
-    
-    if request.method == 'POST':
-        full_name = request.form.get('full_name')
-        email = request.form.get('email')
-        phone = request.form.get('phone')
-        cover_letter = request.form.get('cover_letter')
-        
-        cv_file = request.files.get('cv')
-        video_file = request.files.get('intro_video')
-        
-        if not full_name or not email:
-            flash('يرجى إدخال الاسم والبريد الإلكتروني', 'error')
-            return render_template('apply_job.html', job=job)
-        
-        cv_path = None
-        video_path = None
-        
-        # رفع السيرة الذاتية
-        if cv_file and cv_file.filename:
-            filename = secure_filename(cv_file.filename)
-            if not allowed_file(filename, config.ALLOWED_CV):
-                flash('نوع السيرة الذاتية غير مدعوم', 'error')
-                return render_template('apply_job.html', job=job)
+    <!-- أحدث الوظائف -->
+    <section class="py-5" id="jobs">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="section-title m-0">أحدث الوظائف المتاحة</h2>
+                <a href="/jobs" class="btn btn-outline-primary">عرض جميع الوظائف</a>
+            </div>
             
-            cv_file.seek(0, os.SEEK_END)
-            if cv_file.tell() > config.MAX_CV_SIZE:
-                flash('حجم السيرة الذاتية كبير (5MB كحد أقصى)', 'error')
-                return render_template('apply_job.html', job=job)
-            cv_file.seek(0)
+            <div class="row">
+                {% if featured_jobs %}
+                    {% for job in featured_jobs %}
+                    <div class="col-lg-6">
+                        <div class="job-card">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="fw-bold">{{ job.title }}</h5>
+                                    <p class="text-muted mb-1">
+                                        <i class="fas fa-building me-2"></i>{{ job.company_name }}
+                                    </p>
+                                </div>
+                                <span class="badge badge-yemen">{{ job.job_type or 'دوام كامل' }}</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                {% if job.location %}
+                                <span class="text-muted me-3">
+                                    <i class="fas fa-map-marker-alt me-1"></i>{{ job.location }}
+                                </span>
+                                {% endif %}
+                                
+                                {% if job.salary_range %}
+                                <span class="text-muted">
+                                    <i class="fas fa-money-bill-wave me-1"></i>{{ job.salary_range }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            
+                            <p class="text-dark mb-3">{{ job.description[:120] }}...</p>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    <i class="fas fa-clock me-1"></i>{{ job.created_at[:10] }}
+                                </small>
+                                <a href="/job/{{ job.id }}" class="btn btn-primary btn-sm">التفاصيل والتقديم</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-briefcase fa-3x text-muted mb-3"></i>
+                        <h4 class="text-muted">لا توجد وظائف حالياً</h4>
+                        <p class="text-muted">كن أول من ينشر وظيفة في منصتنا</p>
+                        <a href="/company/register" class="btn btn-primary">سجل شركتك الآن</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <!-- دعوة للتسجيل -->
+    <section class="py-5 bg-dark text-white">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h3 class="fw-bold mb-3">هل أنت صاحب عمل تبحث عن موظفين متميزين؟</h3>
+                    <p class="mb-0">انضم إلى المئات من الشركات اليمنية التي وجدت موظفيها المثاليين عبر منصتنا</p>
+                </div>
+                <div class="col-lg-4 text-lg-start text-center">
+                    <a href="/company/register" class="btn btn-primary btn-lg">
+                        <i class="fas fa-building me-2"></i>سجل شركتك مجاناً
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- الفوتر -->
+    <footer class="footer" id="contact">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fas fa-door-open me-2"></i>بوابتي للتوظيف
+                    </h5>
+                    <p class="mb-3">
+                        منصة يمنية رائدة في مجال التوظيف، تهدف إلى ربط الكفاءات اليمنية مع فرص العمل المناسبة في السوق المحلي والعالمي.
+                    </p>
+                    <div class="social-links">
+                        <a href="#"><i class="fab fa-facebook"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-2">
+                    <h6 class="fw-bold mb-3">روابط سريعة</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/" class="text-light text-decoration-none">الرئيسية</a></li>
+                        <li><a href="/jobs" class="text-light text-decoration-none">الوظائف</a></li>
+                        <li><a href="/company/register" class="text-light text-decoration-none">سجل شركتك</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-3">
+                    <h6 class="fw-bold mb-3">للشركات</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/company/register" class="text-light text-decoration-none">تسجيل شركة</a></li>
+                        <li><a href="/company/login" class="text-light text-decoration-none">دخول الشركات</a></li>
+                        <li><a href="#" class="text-light text-decoration-none">باقات التوظيف</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-3">
+                    <h6 class="fw-bold mb-3">اتصل بنا</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <i class="fas fa-envelope me-2"></i>
+                            info@bawabti.com
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-phone me-2"></i>
+                            +967 1 234 567
+                        </li>
+                        <li>
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            صنعاء، اليمن
+                        </li>
+                    </ul>
+                </div>
+            </div>
             
-            save_name = f"cv_{int(datetime.now().timestamp())}_{filename}"
-            save_path = os.path.join(app.config['CV_FOLDER'], save_name)
-            cv_file.save(save_path)
-            cv_path = f"/uploads/cvs/{save_name}"
-        
-        # رفع الفيديو
-        if video_file and video_file.filename:
-            filename = secure_filename(video_file.filename)
-            if not allowed_file(filename, config.ALLOWED_VIDEO):
-                flash('نوع الفيديو غير مدعوم', 'error')
-                return render_template('apply_job.html', job=job)
+            <hr class="my-4">
             
-            video_file.seek(0, os.SEEK_END)
-            if video_file.tell() > config.MAX_VIDEO_SIZE:
-                flash('حجم الفيديو كبير (60MB كحد أقصى)', 'error')
-                return render_template('apply_job.html', job=job)
-            video_file.seek(0)
-            
-            save_name = f"video_{int(datetime.now().timestamp())}_{filename}"
-            save_path = os.path.join(app.config['VIDEO_FOLDER'], save_name)
-            video_file.save(save_path)
-            video_path = f"/uploads/videos/{save_name}"
-        
-        # حفظ بيانات المتقدم
-        cur = conn.cursor()
-        cur.execute('''INSERT INTO applicants (job_id, full_name, email, phone, cv_path, video_path, cover_letter) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                   (job_id, full_name, email, phone, cv_path, video_path, cover_letter))
-        conn.commit()
-        conn.close()
-        
-        flash('تم تقديم طلبك بنجاح! سنقوم بمراجعته قريباً.', 'success')
-        return redirect(url_for('job_details', job_id=job_id))
-    
-    conn.close()
-    return render_template('apply_job.html', job=job)
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p class="mb-0">&copy; 2024 بوابتي للتوظيف. جميع الحقوق محفوظة.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
 
-@app.route('/job/<int:job_id>')
-def job_details(job_id):
-    conn = get_db_connection()
-    job = conn.execute('''
-        SELECT j.*, c.name as company_name, c.location as company_location, 
-               c.description as company_description, c.phone as company_phone 
-        FROM jobs j 
-        JOIN companies c ON j.company_id = c.id 
-        WHERE j.id = ? AND j.is_active = 1
-    ''', (job_id,)).fetchone()
-    conn.close()
-    
-    if not job:
-        flash('الوظيفة غير متاحة', 'error')
-        return redirect(url_for('jobs'))
-    
-    return render_template('job_details.html', job=job)
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // تحميل الإحصائيات
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                document.getElementById('totalJobs').textContent = stats.total_jobs;
+                document.getElementById('totalCompanies').textContent = stats.total_companies;
+                document.getElementById('totalApplicants').textContent = stats.total_applicants;
+                document.getElementById('recentApplications').textContent = stats.recent_applications;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
 
-# ==============================
-# 📱 واجهات API للتطبيق (محفوظة كما هي)
-# ==============================
-
-@app.route('/api/jobs/', methods=['GET'])
-def api_jobs():
-    conn = get_db_connection()
-    rows = conn.execute('''
-        SELECT j.*, c.name as company_name 
-        FROM jobs j 
-        JOIN companies c ON j.company_id = c.id 
-        WHERE j.is_active = 1 
-        ORDER BY j.created_at DESC
-    ''').fetchall()
-    jobs = [dict(row) for row in rows]
-    conn.close()
-    return jsonify(jobs)
-
-@app.route('/api/upload', methods=['POST'])
-@limiter.limit("10 per minute")
-def api_upload():
-    # ... (نفس الكود السابق) ...
-    pass
-
-@app.route('/upload_cv', methods=['POST'])
-@limiter.limit("20 per minute")
-def upload_cv():
-    # ... (نفس الكود السابق) ...
-    pass
-
-@app.route('/upload_video', methods=['POST'])
-@limiter.limit("10 per minute")
-def upload_video():
-    # ... (نفس الكود السابق) ...
-    pass
-
-# ==============================
-# 🗂️ خدمة الملفات
-# ==============================
-
-@app.route('/uploads/cvs/<path:filename>')
-def uploaded_cv(filename):
-    return send_from_directory(app.config['CV_FOLDER'], filename)
-
-@app.route('/uploads/videos/<path:filename>')
-def uploaded_video(filename):
-    return send_from_directory(app.config['VIDEO_FOLDER'], filename)
-
-# ==============================
-# 📈 إحصائيات API
-# ==============================
-
-@app.route('/api/stats')
-def api_stats():
-    conn = get_db_connection()
-    
-    total_jobs = conn.execute('SELECT COUNT(*) FROM jobs WHERE is_active = 1').fetchone()[0]
-    total_companies = conn.execute('SELECT COUNT(*) FROM companies WHERE is_active = 1').fetchone()[0]
-    total_applicants = conn.execute('SELECT COUNT(*) FROM applicants').fetchone()[0]
-    recent_applications = conn.execute('''
-        SELECT COUNT(*) FROM applicants 
-        WHERE created_at >= datetime('now', '-7 days')
-    ''').fetchone()[0]
-    
-    conn.close()
-    
-    return jsonify({
-        'total_jobs': total_jobs,
-        'total_companies': total_companies,
-        'total_applicants': total_applicants,
-        'recent_applications': recent_applications
-    })
-
-# ==============================
-# 🚀 تشغيل السيرفر
-# ==============================
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+        // التهيئة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStats();
+        });
+    </script>
+</body>
+</html>
