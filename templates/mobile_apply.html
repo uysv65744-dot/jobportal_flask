@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقديم على الوظيفة - بوابتي للتوظيف</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --yemen-red: #ce1126;
+            --yemen-black: #000000;
+            --yemen-white: #ffffff;
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --light: #f8f9fa;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --danger: #e74c3c;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .mobile-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--yemen-red), #a4001a);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            text-align: center;
+            margin-bottom: 0;
+        }
+        
+        .yemen-flag {
+            height: 20px;
+            width: 30px;
+            background: linear-gradient(to bottom, #ce1126 33%, #ffffff 33%, #ffffff 66%, #000000 66%);
+            display: inline-block;
+            margin: 0 10px;
+            border-radius: 2px;
+            vertical-align: middle;
+        }
+        
+        .form-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 0 0 20px 20px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-size: 16px;
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: var(--yemen-red);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(206, 17, 38, 0.1);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+        }
+        
+        .upload-section {
+            margin: 25px 0;
+        }
+        
+        .upload-card {
+            background: var(--light);
+            border: 2px dashed #bdc3c7;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .upload-card.active {
+            border-color: var(--yemen-red);
+            background: rgba(206, 17, 38, 0.05);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+        
+        .upload-icon.cv {
+            color: var(--danger);
+        }
+        
+        .upload-icon.video {
+            color: var(--secondary);
+        }
+        
+        .upload-text {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--primary);
+        }
+        
+        .upload-subtext {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .file-info {
+            background: var(--success);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            margin-top: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin: 5px 0;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--yemen-red), #a4001a);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(206, 17, 38, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .progress-container {
+            background: #e9ecef;
+            border-radius: 10px;
+            margin: 15px 0;
+            height: 8px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(45deg, var(--yemen-red), #a4001a);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .status-message {
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: rgba(39, 174, 96, 0.1);
+            color: var(--success);
+            border: 1px solid var(--success);
+        }
+        
+        .status-error {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+        
+        .status-loading {
+            background: rgba(52, 152, 219, 0.1);
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+        }
+        
+        .job-info {
+            background: rgba(52, 152, 219, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            border-right: 4px solid var(--secondary);
+        }
+        
+        .job-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        
+        .company-name {
+            color: var(--secondary);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .job-meta {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .meta-item {
+            background: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: var(--primary);
+            border: 1px solid #e9ecef;
+        }
+        
+        .required::after {
+            content: " *";
+            color: var(--yemen-red);
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 15px;
+            }
+            
+            .upload-card {
+                padding: 20px;
+            }
+            
+            .btn {
+                padding: 14px 24px;
+                font-size: 16px;
+            }
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <!-- الهيدر -->
+        <div class="header">
+            <h2>
+                <i class="fas fa-door-open"></i>
+                بوابتي للتوظيف
+                <span class="yemen-flag"></span>
+            </h2>
+            <p>تقديم طلب التوظيف</p>
+        </div>
+
+        <!-- معلومات الوظيفة -->
+        <div class="form-container">
+            <div class="job-info" id="jobInfo">
+                <!-- سيتم ملؤها بالجافاسكريبت -->
+            </div>
+
+            <!-- رسائل الحالة -->
+            <div id="statusMessage" style="display: none;"></div>
+
+            <!-- شريط التقدم -->
+            <div class="progress-container" id="progressContainer" style="display: none;">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <!-- نموذج التقديم -->
+            <form id="applicationForm">
+                <!-- المعلومات الشخصية -->
+                <div class="form-group">
+                    <label class="form-label required">الاسم الكامل</label>
+                    <input type="text" class="form-input" id="fullName" name="full_name" 
+                           placeholder="ادخل اسمك الكامل" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label required">البريد الإلكتروني</label>
+                    <input type="email" class="form-input" id="email" name="email" 
+                           placeholder="ادخل بريدك الإلكتروني" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">رقم الهاتف</label>
+                    <input type="tel" class="form-input" id="phone" name="phone" 
+                           placeholder="ادخل رقم هاتفك">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">رسالة التقديم (اختياري)</label>
+                    <textarea class="form-textarea" id="coverLetter" name="cover_letter" 
+                              placeholder="اكتب رسالة تعريفية عن نفسك ولماذا أنت مناسب لهذه الوظيفة..."></textarea>
+                </div>
+
+                <!-- رفع السيرة الذاتية -->
+                <div class="upload-section">
+                    <label class="form-label required">السيرة الذاتية</label>
+                    <div class="upload-card" id="cvUploadCard">
+                        <div class="upload-icon cv">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="upload-text">رفع السيرة الذاتية</div>
+                        <div class="upload-subtext">PDF, DOC, DOCX - الحجم الأقصى: 5MB</div>
+                        <input type="file" id="cvFile" name="cv" accept=".pdf,.doc,.docx" 
+                               style="display: none;" required>
+                        <div id="cvFileInfo" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- رفع الفيديو -->
+                <div class="upload-section">
+                    <label class="form-label">فيديو التعريف (اختياري)</label>
+                    <div class="upload-card" id="videoUploadCard">
+                        <div class="upload-icon video">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="upload-text">رفع فيديو التعريف</div>
+                        <div class="upload-subtext">MP4, AVI, MOV - الحجم الأقصى: 60MB</div>
+                        <input type="file" id="videoFile" name="intro_video" accept=".mp4,.avi,.mov" 
+                               style="display: none;">
+                        <div id="videoFileInfo" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- أزرار الإرسال -->
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-paper-plane"></i> إرسال الطلب
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeWindow()">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // بيانات الوظيفة من URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('job_id');
+        const jobTitle = urlParams.get('job_title') || 'وظيفة عامة';
+        const companyName = urlParams.get('company_name') || 'شركة';
+        const jobLocation = urlParams.get('location') || 'غير محدد';
+        const jobType = urlParams.get('job_type') || 'دوام كامل';
+
+        // عناصر DOM
+        const jobInfoElement = document.getElementById('jobInfo');
+        const applicationForm = document.getElementById('applicationForm');
+        const cvUploadCard = document.getElementById('cvUploadCard');
+        const videoUploadCard = document.getElementById('videoUploadCard');
+        const cvFileInput = document.getElementById('cvFile');
+        const videoFileInput = document.getElementById('videoFile');
+        const cvFileInfo = document.getElementById('cvFileInfo');
+        const videoFileInfo = document.getElementById('videoFileInfo');
+        const statusMessage = document.getElementById('statusMessage');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // ملفات مختارة
+        let selectedCV = null;
+        let selectedVideo = null;
+
+        // تهيئة الصفحة
+        function initializePage() {
+            displayJobInfo();
+            setupEventListeners();
+        }
+
+        // عرض معلومات الوظيفة
+        function displayJobInfo() {
+            jobInfoElement.innerHTML = `
+                <div class="job-title">${jobTitle}</div>
+                <div class="company-name">
+                    <i class="fas fa-building"></i> ${companyName}
+                </div>
+                <div class="job-meta">
+                    <span class="meta-item">
+                        <i class="fas fa-map-marker-alt"></i> ${jobLocation}
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-briefcase"></i> ${jobType}
+                    </span>
+                </div>
+            `;
+        }
+
+        // إعداد مستمعي الأحداث
+        function setupEventListeners() {
+            // رفع السيرة الذاتية
+            cvUploadCard.addEventListener('click', () => cvFileInput.click());
+            cvFileInput.addEventListener('change', (e) => handleFileSelect(e, 'cv'));
+
+            // رفع الفيديو
+            videoUploadCard.addEventListener('click', () => videoFileInput.click());
+            videoFileInput.addEventListener('change', (e) => handleFileSelect(e, 'video'));
+
+            // إرسال النموذج
+            applicationForm.addEventListener('submit', handleFormSubmit);
+
+            // تأثيرات السحب والإفلات
+            setupDragAndDrop();
+        }
+
+        // التعامل مع اختيار الملف
+        function handleFileSelect(event, fileType) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const maxSize = fileType === 'cv' ? 5 * 1024 * 1024 : 60 * 1024 * 1024;
+            const allowedTypes = fileType === 'cv' ? ['pdf', 'doc', 'docx'] : ['mp4', 'avi', 'mov'];
+            
+            // التحقق من الحجم
+            if (file.size > maxSize) {
+                showStatus(`حجم الملف كبير جداً (${fileType === 'cv' ? '5MB' : '60MB'} كحد أقصى)`, 'error');
+                return;
+            }
+
+            // التحقق من النوع
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+            if (!allowedTypes.includes(fileExtension)) {
+                showStatus(`نوع الملف غير مدعوم`, 'error');
+                return;
+            }
+
+            // حفظ الملف وعرض المعلومات
+            if (fileType === 'cv') {
+                selectedCV = file;
+                cvFileInfo.innerHTML = `
+                    <div class="file-info">
+                        <i class="fas fa-check"></i>
+                        ${file.name} (${formatFileSize(file.size)})
+                    </div>
+                `;
+                cvFileInfo.style.display = 'block';
+                cvUploadCard.classList.add('active');
+            } else {
+                selectedVideo = file;
+                videoFileInfo.innerHTML = `
+                    <div class="file-info">
+                        <i class="fas fa-check"></i>
+                        ${file.name} (${formatFileSize(file.size)})
+                    </div>
+                `;
+                videoFileInfo.style.display = 'block';
+                videoUploadCard.classList.add('active');
+            }
+
+            showStatus(`تم اختيار ${fileType === 'cv' ? 'السيرة الذاتية' : 'الفيديو'} بنجاح`, 'success');
+        }
+
+        // إعداد السحب والإفلات
+        function setupDragAndDrop() {
+            [cvUploadCard, videoUploadCard].forEach((card, index) => {
+                const fileType = index === 0 ? 'cv' : 'video';
+                
+                card.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    card.classList.add('active');
+                });
+
+                card.addEventListener('dragleave', () => {
+                    card.classList.remove('active');
+                });
+
+                card.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    card.classList.remove('active');
+                    
+                    const file = e.dataTransfer.files[0];
+                    if (file) {
+                        const input = fileType === 'cv' ? cvFileInput : videoFileInput;
+                        input.files = e.dataTransfer.files;
+                        handleFileSelect({ target: input }, fileType);
+                    }
+                });
+            });
+        }
+
+        // التعامل مع إرسال النموذج
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            // التحقق من البيانات
+            if (!validateForm()) {
+                return;
+            }
+
+            // إظهار التحميل
+            setLoading(true);
+
+            try {
+                // إنشاء FormData
+                const formData = new FormData();
+                formData.append('full_name', document.getElementById('fullName').value);
+                formData.append('email', document.getElementById('email').value);
+                formData.append('phone', document.getElementById('phone').value);
+                formData.append('cover_letter', document.getElementById('coverLetter').value);
+                formData.append('job_id', jobId);
+
+                // إضافة الملفات
+                if (selectedCV) {
+                    formData.append('cv', selectedCV);
+                }
+                if (selectedVideo) {
+                    formData.append('intro_video', selectedVideo);
+                }
+
+                // إرسال البيانات
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showStatus('تم تقديم طلبك بنجاح! سنقوم بمراجعته قريباً.', 'success');
+                    
+                    // إعادة تعيين النموذج
+                    setTimeout(() => {
+                        applicationForm.reset();
+                        resetFileInputs();
+                        showStatus('', 'success');
+                        setLoading(false);
+                        
+                        // إغلاق النافذة بعد نجاح الإرسال
+                        setTimeout(() => {
+                            if (window.opener) {
+                                window.close();
+                            } else {
+                                // إعادة توجيه أو إظهار رسالة نجاح
+                                showStatus('يمكنك إغلاق هذه الصفحة الآن', 'success');
+                            }
+                        }, 2000);
+                    }, 3000);
+
+                } else {
+                    throw new Error(result.error || 'حدث خطأ أثناء الإرسال');
+                }
+
+            } catch (error) {
+                showStatus(error.message, 'error');
+                setLoading(false);
+            }
+        }
+
+        // التحقق من صحة النموذج
+        function validateForm() {
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const cvFile = selectedCV;
+
+            if (!fullName) {
+                showStatus('يرجى إدخال الاسم الكامل', 'error');
+                return false;
+            }
+
+            if (!email) {
+                showStatus('يرجى إدخال البريد الإلكتروني', 'error');
+                return false;
+            }
+
+            if (!cvFile) {
+                showStatus('يرجى رفع السيرة الذاتية', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        // إظهار رسالة الحالة
+        function showStatus(message, type) {
+            if (!message) {
+                statusMessage.style.display = 'none';
+                return;
+            }
+
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message status-${type}`;
+            statusMessage.style.display = 'block';
+
+            // إخفاء الرسالة تلقائياً بعد 5 ثواني
+            if (type === 'success' || type === 'error') {
+                setTimeout(() => {
+                    statusMessage.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // تعيين حالة التحميل
+        function setLoading(loading) {
+            if (loading) {
+                submitBtn.innerHTML = '<span class="loading-spinner"></span> جاري الإرسال...';
+                submitBtn.disabled = true;
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '50%';
+            } else {
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> إرسال الطلب';
+                submitBtn.disabled = false;
+                progressContainer.style.display = 'none';
+                progressBar.style.width = '0%';
+            }
+        }
+
+        // إعادة تعيين ملفات الإدخال
+        function resetFileInputs() {
+            selectedCV = null;
+            selectedVideo = null;
+            cvFileInfo.style.display = 'none';
+            videoFileInfo.style.display = 'none';
+            cvUploadCard.classList.remove('active');
+            videoUploadCard.classList.remove('active');
+            cvFileInput.value = '';
+            videoFileInput.value = '';
+        }
+
+        // تنسيق حجم الملف
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // إغلاق النافذة
+        function closeWindow() {
+            if (window.opener) {
+                window.close();
+            } else {
+                window.history.back();
+            }
+        }
+
+        // التهيئة عند تحميل الصفحة
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>
