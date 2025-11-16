@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المتقدمين - بوابتي للتوظيف</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --yemen-red: #ce1126;
+            --dark: #2c3e50;
+            --light: #f8f9fa;
+        }
+        
+        body {
+            background: var(--light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .sidebar {
+            background: var(--dark);
+            color: white;
+            min-height: 100vh;
+            padding: 0;
+            position: fixed;
+            width: 250px;
+        }
+        
+        .sidebar .nav-link {
+            color: #ecf0f1;
+            padding: 15px 20px;
+            border-bottom: 1px solid #34495e;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover, .sidebar .nav-link.active {
+            background: #34495e;
+            color: var(--yemen-red);
+        }
+        
+        .main-content {
+            margin-right: 250px;
+            padding: 20px;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--yemen-red), #a4001a) !important;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .applicant-card {
+            border-right: 4px solid var(--yemen-red);
+            transition: all 0.3s ease;
+        }
+        
+        .applicant-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--yemen-red), #a4001a);
+            border: none;
+            border-radius: 25px;
+            padding: 8px 20px;
+            font-weight: 600;
+        }
+        
+        .badge-new {
+            background: var(--yemen-red);
+        }
+        
+        .badge-reviewed {
+            background: #f39c12;
+        }
+        
+        .badge-hired {
+            background: #27ae60;
+        }
+        
+        .badge-rejected {
+            background: #e74c3c;
+        }
+        
+        .filter-badge {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-badge.active {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .status-dropdown {
+            min-width: 150px;
+        }
+        
+        .file-badge {
+            background: #3498db;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin: 2px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <!-- الشريط الجانبي -->
+    <nav class="sidebar">
+        <div class="sidebar-sticky pt-3">
+            <div class="text-center p-3 border-bottom">
+                <h5 class="mb-0">
+                    <i class="fas fa-door-open me-2"></i>
+                    بوابتي للتوظيف
+                </h5>
+                <small class="text-muted">لوحة تحكم الشركة</small>
+            </div>
+            
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="/company/dashboard">
+                        <i class="fas fa-tachometer-alt"></i>لوحة التحكم
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/company/jobs">
+                        <i class="fas fa-briefcase"></i>إدارة الوظائف
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="/company/applicants">
+                        <i class="fas fa-users"></i>المتقدمين
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/company/logout">
+                        <i class="fas fa-sign-out-alt"></i>تسجيل الخروج
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="main-content">
+        <!-- شريط التنقل العلوي -->
+        <nav class="navbar navbar-dark mb-4">
+            <div class="container-fluid">
+                <span class="navbar-brand">إدارة المتقدمين</span>
+                <div class="d-flex">
+                    <a href="/company/dashboard" class="btn btn-outline-light btn-sm me-2">
+                        <i class="fas fa-arrow-right me-1"></i>الرئيسية
+                    </a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- رسائل التنبيه -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- رأس الصفحة -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold">المتقدمين للوظائف</h4>
+            <div class="d-flex gap-2">
+                <a href="/company/jobs" class="btn btn-outline-primary">
+                    <i class="fas fa-briefcase me-2"></i>الوظائف
+                </a>
+            </div>
+        </div>
+
+        <!-- إحصائيات سريعة -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="fw-bold text-primary">{{ applicants|length }}</h3>
+                        <p class="text-muted mb-0">إجمالي المتقدمين</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="fw-bold text-danger">{{ applicants|selectattr('status', 'equalto', 'جديد')|list|length }}</h3>
+                        <p class="text-muted mb-0">طلبات جديدة</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="fw-bold text-success">{{ applicants|selectattr('status', 'equalto', 'مقبول')|list|length }}</h3>
+                        <p class="text-muted mb-0">مقبولين</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h3 class="fw-bold text-warning">{{ applicants|selectattr('status', 'equalto', 'تم المراجعة')|list|length }}</h3>
+                        <p class="text-muted mb-0">تمت مراجعتهم</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- فلاتر -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3">تصفية حسب الحالة:</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="filter-badge badge bg-primary" data-status="">الكل ({{ applicants|length }})</span>
+                    <span class="filter-badge badge badge-new" data-status="جديد">جديد ({{ applicants|selectattr('status', 'equalto', 'جديد')|list|length }})</span>
+                    <span class="filter-badge badge badge-reviewed" data-status="تم المراجعة">تم المراجعة ({{ applicants|selectattr('status', 'equalto', 'تم المراجعة')|list|length }})</span>
+                    <span class="filter-badge badge badge-hired" data-status="مقبول">مقبول ({{ applicants|selectattr('status', 'equalto', 'مقبول')|list|length }})</span>
+                    <span class="filter-badge badge badge-rejected" data-status="مرفوض">مرفوض ({{ applicants|selectattr('status', 'equalto', 'مرفوض')|list|length }})</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- قائمة المتقدمين -->
+        <div class="row">
+            <div class="col-12">
+                {% if applicants %}
+                    {% for applicant in applicants %}
+                    <div class="card applicant-card mb-3" data-status="{{ applicant.status }}">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <div>
+                                            <h5 class="fw-bold mb-2">{{ applicant.full_name }}</h5>
+                                            <p class="text-muted mb-2">
+                                                <i class="fas fa-envelope me-2"></i>{{ applicant.email }}
+                                                {% if applicant.phone %}
+                                                <span class="me-3">|</span>
+                                                <i class="fas fa-phone me-2"></i>{{ applicant.phone }}
+                                                {% endif %}
+                                            </p>
+                                            <p class="text-muted mb-2">
+                                                <i class="fas fa-briefcase me-2"></i>
+                                                <strong>الوظيفة:</strong> {{ applicant.job_title }}
+                                            </p>
+                                        </div>
+                                        <span class="badge 
+                                            {% if applicant.status == 'جديد' %}badge-new
+                                            {% elif applicant.status == 'تم المراجعة' %}badge-reviewed
+                                            {% elif applicant.status == 'مقبول' %}badge-hired
+                                            {% else %}badge-rejected{% endif %}">
+                                            {{ applicant.status }}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- الملفات المرفوعة -->
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        {% if applicant.cv_path %}
+                                        <a href="{{ applicant.cv_path }}" target="_blank" class="file-badge">
+                                            <i class="fas fa-file-pdf me-1"></i>السيرة الذاتية
+                                        </a>
+                                        {% endif %}
+                                        
+                                        {% if applicant.video_path %}
+                                        <a href="{{ applicant.video_path }}" target="_blank" class="file-badge">
+                                            <i class="fas fa-video me-1"></i>فيديو التعريف
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    {% if applicant.cover_letter %}
+                                    <div class="mb-3">
+                                        <strong>خطاب التقديم:</strong>
+                                        <p class="text-dark mt-1">{{ applicant.cover_letter[:150] }}{% if applicant.cover_letter|length > 150 %}...{% endif %}</p>
+                                    </div>
+                                    {% endif %}
+                                    
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>{{ applicant.created_at[:16] }}
+                                    </small>
+                                </div>
+                                
+                                <div class="col-md-4 text-md-end">
+                                    <!-- تغيير الحالة -->
+                                    <div class="dropdown mb-3">
+                                        <button class="btn btn-outline-secondary dropdown-toggle w-100" type="button" data-bs-toggle="dropdown">
+                                            <i class="fas fa-edit me-2"></i>تغيير الحالة
+                                        </button>
+                                        <ul class="dropdown-menu status-dropdown">
+                                            <li>
+                                                <form action="/company/applicants/{{ applicant.id }}/update_status" method="POST" class="d-inline">
+                                                    <input type="hidden" name="status" value="جديد">
+                                                    <button type="submit" class="dropdown-item">جديد</button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form action="/company/applicants/{{ applicant.id }}/update_status" method="POST" class="d-inline">
+                                                    <input type="hidden" name="status" value="تم المراجعة">
+                                                    <button type="submit" class="dropdown-item">تم المراجعة</button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form action="/company/applicants/{{ applicant.id }}/update_status" method="POST" class="d-inline">
+                                                    <input type="hidden" name="status" value="مقبول">
+                                                    <button type="submit" class="dropdown-item">مقبول</button>
+                                                </form>
+                                            </li>
+                                            <li>
+                                                <form action="/company/applicants/{{ applicant.id }}/update_status" method="POST" class="d-inline">
+                                                    <input type="hidden" name="status" value="مرفوض">
+                                                    <button type="submit" class="dropdown-item">مرفوض</button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <!-- إجراءات -->
+                                    <div class="d-grid gap-2">
+                                        {% if applicant.cv_path %}
+                                        <a href="{{ applicant.cv_path }}" target="_blank" class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye me-1"></i>عرض السيرة الذاتية
+                                        </a>
+                                        {% endif %}
+                                        
+                                        {% if applicant.video_path %}
+                                        <a href="{{ applicant.video_path }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                            <i class="fas fa-video me-1"></i>مشاهدة الفيديو
+                                        </a>
+                                        {% endif %}
+                                        
+                                        <a href="mailto:{{ applicant.email }}" class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-envelope me-1"></i>إرسال بريد
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">لا توجد طلبات تقديم حالياً</h4>
+                            <p class="text-muted mb-4">سيظهر المتقدمون هنا عندما يقدموا على وظائفك</p>
+                            <a href="/company/jobs" class="btn btn-primary">
+                                <i class="fas fa-briefcase me-2"></i>عرض الوظائف
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // تصفية المتقدمين حسب الحالة
+        document.addEventListener('DOMContentLoaded', function() {
+            const filterBadges = document.querySelectorAll('.filter-badge');
+            const applicantCards = document.querySelectorAll('.applicant-card');
+            
+            filterBadges.forEach(badge => {
+                badge.addEventListener('click', function() {
+                    const status = this.getAttribute('data-status');
+                    
+                    // إزالة النشط من جميع البادجات
+                    filterBadges.forEach(b => b.classList.remove('active'));
+                    // إضافة النشط للبادج المختار
+                    this.classList.add('active');
+                    
+                    // تصفية البطاقات
+                    applicantCards.forEach(card => {
+                        if (status === '' || card.getAttribute('data-status') === status) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
