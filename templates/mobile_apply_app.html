@@ -4,134 +4,242 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>التقديم السريع - بوابتي للتوظيف</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: 'Arial', sans-serif; 
+        :root {
+            --yemen-red: #ce1126;
+            --dark: #2c3e50;
+            --light: #f8f9fa;
+        }
+        
+        body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh; padding: 20px;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        .container { max-width: 100%; margin: 0 auto; }
-        .header { 
-            background: linear-gradient(135deg, #ce1126, #a4001a);
-            color: white; padding: 20px; border-radius: 15px;
-            text-align: center; margin-bottom: 20px;
+        
+        .mobile-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        .form-container {
-            background: white; padding: 25px; border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        
+        .header-card {
+            background: linear-gradient(135deg, var(--yemen-red), #a4001a);
+            color: white;
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
-        .form-group { margin-bottom: 20px; }
-        .form-label { display: block; font-weight: bold; margin-bottom: 8px; }
-        .form-input { 
-            width: 100%; padding: 15px; border: 2px solid #ddd;
-            border-radius: 10px; font-size: 16px;
+        
+        .form-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .app-features {
-            background: #f8f9fa; padding: 20px; border-radius: 10px;
-            margin: 20px 0; text-align: center;
+        
+        .job-info-card {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
         }
-        .feature-item { 
-            display: inline-block; margin: 0 15px; 
-            text-align: center; color: #666;
+        
+        .feature-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin: 10px 0;
+            border-left: 4px solid var(--yemen-red);
         }
-        .btn { 
-            display: block; width: 100%; padding: 15px;
-            background: #ce1126; color: white; border: none;
-            border-radius: 10px; font-size: 18px; font-weight: bold;
-            margin: 10px 0; cursor: pointer;
+        
+        .btn-mobile {
+            background: linear-gradient(45deg, var(--yemen-red), #a4001a);
+            border: none;
+            border-radius: 15px;
+            padding: 15px;
+            font-weight: 600;
+            font-size: 18px;
+            width: 100%;
+            margin: 10px 0;
+            box-shadow: 0 5px 15px rgba(206, 17, 38, 0.3);
         }
-        .btn-secondary { background: #6c757d; }
+        
+        .form-control {
+            border-radius: 12px;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            font-size: 16px;
+        }
+        
+        .form-control:focus {
+            border-color: var(--yemen-red);
+            box-shadow: 0 0 0 3px rgba(206, 17, 38, 0.1);
+        }
+        
+        .yemen-flag {
+            height: 20px;
+            width: 30px;
+            background: linear-gradient(to bottom, #ce1126 33%, #ffffff 33%, #ffffff 66%, #000000 66%);
+            display: inline-block;
+            margin: 0 10px;
+            border-radius: 2px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2>📱 التقديم السريع</h2>
-            <p>استخدم إمكانيات التطبيق للتقديم بسهولة</p>
+    <div class="mobile-container">
+        <!-- الهيدر -->
+        <div class="header-card">
+            <h2 class="fw-bold">
+                <i class="fas fa-mobile-alt me-2"></i>
+                التقديم السريع
+                <span class="yemen-flag"></span>
+            </h2>
+            <p class="mb-0">استخدم إمكانيات التطبيق للتقديم بسهولة</p>
         </div>
 
-        <div class="form-container">
-            <!-- معلومات الوظيفة -->
-            <div class="job-info">
-                <h3 id="jobTitle">وظيفة</h3>
-                <p id="companyName">شركة</p>
-                <div class="job-meta">
-                    <span>📍 <span id="jobLocation">موقع</span></span>
-                    <span>⏰ <span id="jobType">نوع</span></span>
-                </div>
+        <!-- معلومات الوظيفة -->
+        <div class="job-info-card">
+            <h4 id="jobTitle" class="fw-bold">{{ job_title }}</h4>
+            <p class="mb-2" id="companyName">
+                <i class="fas fa-building me-2"></i>{{ company_name }}
+            </p>
+            <div class="d-flex justify-content-center gap-3">
+                <span id="jobLocation">
+                    <i class="fas fa-map-marker-alt me-1"></i>{{ location }}
+                </span>
+                <span id="jobType">
+                    <i class="fas fa-briefcase me-1"></i>{{ job_type }}
+                </span>
             </div>
+        </div>
 
-            <!-- نموذج البيانات الأساسية -->
+        <!-- نموذج التقديم -->
+        <div class="form-card">
             <form id="applicationForm">
-                <div class="form-group">
-                    <label class="form-label">الاسم الكامل</label>
-                    <input type="text" class="form-input" id="fullName" required>
+                <!-- البيانات الأساسية -->
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">📝 المعلومات الشخصية</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">الاسم الكامل</label>
+                        <input type="text" class="form-control" id="fullName" required 
+                               placeholder="ادخل اسمك الكامل">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" id="email" required 
+                               placeholder="ادخل بريدك الإلكتروني">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">رقم الهاتف</label>
+                        <input type="tel" class="form-control" id="phone" 
+                               placeholder="ادخل رقم هاتفك">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">رسالة التقديم (اختياري)</label>
+                        <textarea class="form-control" id="coverLetter" rows="4" 
+                                  placeholder="اكتب رسالة تعريفية عن نفسك..."></textarea>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">البريد الإلكتروني</label>
-                    <input type="email" class="form-input" id="email" required>
+                <!-- ميزات التطبيق -->
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">🎯 استخدم إمكانيات التطبيق</h5>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="feature-card">
+                                <div style="font-size: 2.5rem;">📄</div>
+                                <h6 class="fw-bold">رفع السيرة الذاتية</h6>
+                                <small class="text-muted">استخدم زر الرفع في التطبيق</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="feature-card">
+                                <div style="font-size: 2.5rem;">🎥</div>
+                                <h6 class="fw-bold">فيديو التعريف</h6>
+                                <small class="text-muted">استخدم زر التسجيل في التطبيق</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">رقم الهاتف</label>
-                    <input type="tel" class="form-input" id="phone">
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">رسالة التقديم (اختياري)</label>
-                    <textarea class="form-input" id="coverLetter" rows="4"></textarea>
-                </div>
+                <!-- أزرار الإجراء -->
+                <button type="button" class="btn btn-mobile" onclick="submitApplication()">
+                    <i class="fas fa-paper-plane me-2"></i>إرسال الطلب
+                </button>
+                
+                <button type="button" class="btn btn-secondary" onclick="closePage()" 
+                        style="background: #6c757d; border: none; border-radius: 15px; padding: 15px; width: 100%;">
+                    <i class="fas fa-times me-2"></i>إلغاء
+                </button>
             </form>
-
-            <!-- ميزات التطبيق -->
-            <div class="app-features">
-                <h4>🎯 استخدم إمكانيات التطبيق</h4>
-                <div class="feature-item">
-                    <div style="font-size: 2rem;">📄</div>
-                    <div>رفع السيرة الذاتية</div>
-                    <small>استخدم زر الرفع في التطبيق</small>
-                </div>
-                <div class="feature-item">
-                    <div style="font-size: 2rem;">🎥</div>
-                    <div>فيديو التعريف</div>
-                    <small>استخدم زر التسجيل في التطبيق</small>
-                </div>
-            </div>
-
-            <!-- أزرار الإجراء -->
-            <button class="btn" onclick="submitApplication()">إرسال الطلب</button>
-            <button class="btn btn-secondary" onclick="closePage()">إلغاء</button>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // تحميل بيانات الوظيفة من URL
-        const urlParams = new URLSearchParams(window.location.search);
-        document.getElementById('jobTitle').textContent = urlParams.get('job_title') || 'وظيفة';
-        document.getElementById('companyName').textContent = urlParams.get('company_name') || 'شركة';
-        document.getElementById('jobLocation').textContent = urlParams.get('location') || 'غير محدد';
-        document.getElementById('jobType').textContent = urlParams.get('job_type') || 'دوام كامل';
-
+        // دالة إرسال الطلب
         function submitApplication() {
             const formData = {
                 full_name: document.getElementById('fullName').value,
                 email: document.getElementById('email').value,
                 phone: document.getElementById('phone').value,
                 cover_letter: document.getElementById('coverLetter').value,
-                job_id: urlParams.get('job_id') || '1'
+                job_id: '{{ job_id }}',
+                job_title: '{{ job_title }}',
+                company_name: '{{ company_name }}'
             };
 
-            // هنا سيتم إرسال البيانات عبر التطبيق
+            // التحقق من البيانات
+            if (!formData.full_name || !formData.email) {
+                alert('يرجى ملء الاسم والبريد الإلكتروني');
+                return;
+            }
+
+            // إرسال عبر التطبيق إذا كان متاحاً
             if (window.android && window.android.submitApplication) {
                 window.android.submitApplication(JSON.stringify(formData));
             } else {
-                alert('البيانات جاهزة للإرسال عبر التطبيق');
-                // في الواقع، التطبيق سيتولى عملية الرفع
+                // عرض بيانات الطلب للمستخدم
+                showApplicationSummary(formData);
             }
         }
 
+        // عرض ملخص الطلب
+        function showApplicationSummary(formData) {
+            const summary = `
+                ✅ تم تجهيز طلبك جاهزاً للإرسال:
+                
+                🏢 الوظيفة: ${formData.job_title}
+                👤 الاسم: ${formData.full_name}
+                📧 البريد: ${formData.email}
+                📞 الهاتف: ${formData.phone || 'غير محدد'}
+                
+                📝 الآن يمكنك استخدام أزرار التطبيق لرفع:
+                • 📄 السيرة الذاتية
+                • 🎥 فيديو التعريف
+                
+                ثم انقر على إرسال في التطبيق!
+            `;
+            
+            alert(summary);
+        }
+
+        // إغلاق الصفحة
         function closePage() {
             if (window.history.length > 1) {
                 window.history.back();
@@ -142,7 +250,24 @@
 
         // تعبئة تلقائية إذا كانت البيانات محفوظة
         window.addEventListener('load', function() {
-            // يمكن إضافة تعبئة تلقائية من localStorage
+            const savedData = localStorage.getItem('job_application_data');
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                document.getElementById('fullName').value = data.full_name || '';
+                document.getElementById('email').value = data.email || '';
+                document.getElementById('phone').value = data.phone || '';
+            }
+        });
+
+        // حفظ البيانات عند التغيير
+        document.getElementById('applicationForm').addEventListener('input', function() {
+            const formData = {
+                full_name: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                cover_letter: document.getElementById('coverLetter').value
+            };
+            localStorage.setItem('job_application_data', JSON.stringify(formData));
         });
     </script>
 </body>
