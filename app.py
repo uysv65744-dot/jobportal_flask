@@ -681,6 +681,26 @@ def upload_video():
     }), 200
 
 # ==============================
+# 📱 واجهة التقديم للموبايل
+# ==============================
+
+@app.route('/mobile/apply')
+def mobile_apply():
+    """واجهة التقديم للموبايل"""
+    job_id = request.args.get('job_id', '1')
+    job_title = request.args.get('job_title', 'وظيفة عامة')
+    company_name = request.args.get('company_name', 'شركة')
+    location = request.args.get('location', 'غير محدد')
+    job_type = request.args.get('job_type', 'دوام كامل')
+    
+    return render_template('mobile_apply.html',
+                         job_id=job_id,
+                         job_title=job_title,
+                         company_name=company_name,
+                         location=location,
+                         job_type=job_type)
+
+# ==============================
 # 🗂️ خدمة الملفات
 # ==============================
 
@@ -729,7 +749,10 @@ def favicon():
 def yemen_pattern():
     return '', 404
 
-# صفحة بسيطة للوظائف للتجربة
+# ==============================
+# 🧪 صفحات تجريبية
+# ==============================
+
 @app.route('/jobs-simple')
 def jobs_simple():
     return '''
@@ -752,7 +775,6 @@ def jobs_simple():
     </html>
     '''
 
-# صفحة تسجيل الدخول التجريبية
 @app.route('/company/login-simple')
 def login_simple():
     return '''
@@ -781,10 +803,6 @@ def login_simple():
     </html>
     '''
 
-# ==============================
-# 🧪 صفحة تجريبية للتحقق من العمل
-# ==============================
-
 @app.route('/test')
 def test_page():
     return jsonify({
@@ -796,6 +814,7 @@ def test_page():
             'login': '/company/login',
             'register': '/company/register',
             'api_stats': '/api/stats',
+            'mobile_apply': '/mobile/apply',
             'test': '/test'
         }
     })
